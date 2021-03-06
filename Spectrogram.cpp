@@ -12,10 +12,11 @@ Spectrogram::Spectrogram()
 float g_minValForLogSpectrogram(0.000000001f);
 int Spectrogram::processSynchronBlock(std::vector <std::vector<float>>& data, juce::MidiBuffer& midiMessages)
 {
+    juce::ignoreUnused(midiMessages);
 
-    for (auto cc = 0 ; cc < m_channels ; ++cc)
+    for (size_t cc = 0 ; cc < m_channels ; ++cc)
     {
-        for (auto kk = 0; kk < m_fftsize ; ++kk)
+        for (size_t kk = 0; kk < m_fftsize ; ++kk)
             m_intime[kk] = data[cc][kk];
         
         // FFT
@@ -26,13 +27,13 @@ int Spectrogram::processSynchronBlock(std::vector <std::vector<float>>& data, ju
     // Hier Auswahl
 
     // start with a simple solution
-    for (auto kk = 0; kk < m_freqsize ; ++kk)
+    for (size_t kk = 0; kk < m_freqsize ; ++kk)
     {
         switch (m_mode)
         {
             case Spectrogram::ChannelMixMode::AbsMean:
                 m_powerfinal.at(kk) = 0.0;
-                for (auto cc = 0 ; cc < m_channels ; ++cc)
+                for (size_t cc = 0 ; cc < m_channels ; ++cc)
                 {
                     m_powerfinal.at(kk) += m_power[cc][kk];
                 }
@@ -41,7 +42,7 @@ int Spectrogram::processSynchronBlock(std::vector <std::vector<float>>& data, ju
                 break;
             case Spectrogram::ChannelMixMode::Max:
                 m_powerfinal.at(kk) = 0.0;
-                for (auto cc = 0 ; cc < m_channels ; ++cc)
+                for (size_t cc = 0 ; cc < m_channels ; ++cc)
                 {
                     if (m_power[cc][kk] > m_powerfinal.at(kk) )
                         m_powerfinal.at(kk) = m_power[cc][kk];
@@ -49,7 +50,7 @@ int Spectrogram::processSynchronBlock(std::vector <std::vector<float>>& data, ju
                 break;
             case Spectrogram::ChannelMixMode::Min:
                 m_powerfinal.at(kk) = 1000000.0;
-                for (auto cc = 0 ; cc < m_channels ; ++cc)
+                for (size_t cc = 0 ; cc < m_channels ; ++cc)
                 {
                     if (m_power[cc][kk] < m_powerfinal.at(kk) )
                         m_powerfinal.at(kk) = m_power[cc][kk];
@@ -73,8 +74,7 @@ int Spectrogram::processSynchronBlock(std::vector <std::vector<float>>& data, ju
     m_mem.push(m_powerfinal);
     m_mem.pop();
 
-//*/
-
+    return 0;
 }
 
 // setter
@@ -83,25 +83,25 @@ void Spectrogram::setSamplerate(float samplerate)
     m_fs = samplerate;
     buildmem();
 }
-void Spectrogram::setchannels(int newchannels)
+void Spectrogram::setchannels(size_t newchannels)
 {
     m_channels = newchannels;
     buildmem();
 }
 
 
-void Spectrogram::setFFTSize(int newFFTSize)
+void Spectrogram::setFFTSize(size_t newFFTSize)
 {
     m_fftsize = newFFTSize;
     setDesiredBlockSizeSamples(m_fftsize);
     buildmem();
 
 }
-int Spectrogram::getnextpowerof2(float fftsize_ms)
+size_t Spectrogram::getnextpowerof2(float fftsize_ms)
 {
     float firstguessFFTSize = (fftsize_ms*0.001*m_fs);
     int nextpowerof2 = int(log(firstguessFFTSize)/log(2.f))+1;
-    return int(pow(2.f,nextpowerof2));
+    return size_t(pow(2.f,nextpowerof2));
 }
 void Spectrogram::setclosestFFTSize_ms(float fftsize_ms)
 {
@@ -137,7 +137,7 @@ void Spectrogram::buildmem()
     m_intime.resize(m_fftsize);
     m_powerfinal.resize(m_freqsize);
     m_power.resize(m_channels);
-    for (auto cc = 0 ; cc < m_channels ; ++cc)
+    for (size_t cc = 0 ; cc < m_channels ; ++cc)
     {
         m_power[cc].resize(m_freqsize);
     }

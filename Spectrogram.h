@@ -24,22 +24,22 @@ public:
 
     // setter
     void setSamplerate(float samplerate);
-    void setchannels(int newchannels);
-    void setFFTSize(int newFFTSize);
+    void setchannels(size_t newchannels);
+    void setFFTSize(size_t newFFTSize);
     void setclosestFFTSize_ms(float fftsize_ms);
     void setmemoryTime_s (float memsize_s);
     void setfeed_percent (float feed);
-    int getnextpowerof2(float fftsize_ms);
+    size_t getnextpowerof2(float fftsize_ms);
 
 private:
     float m_fs;
-    int m_channels;
+    size_t m_channels;
     float m_feed_percent;
     float m_feed_samples;
     float m_memsize_s;
     int m_memsize_blocks;
-    int m_freqsize;
-    int m_fftsize;
+    size_t m_freqsize;
+    size_t m_fftsize;
     ChannelMixMode m_mode;
     std::queue<std::vector<float >> m_mem;
 
