@@ -2,6 +2,9 @@
 #include <vector>
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "PresetHandler.h"
+
+#include "Spectrogram.h"
+
 //==============================================================================
 class JadeSpectrogramAudioProcessor  : public juce::AudioProcessor
 {
@@ -55,7 +58,7 @@ private:
     MidiKeyboardState m_keyboardState;
 #endif
     // Your plugin stuff
-
+    Spectrogram m_spectrogram;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (JadeSpectrogramAudioProcessor)
 };
