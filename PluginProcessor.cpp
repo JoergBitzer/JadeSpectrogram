@@ -124,8 +124,8 @@ void JadeSpectrogramAudioProcessor::prepareToPlay (double sampleRate, int sample
     m_fs = sampleRate;
     m_spectrogram.preparetoProcess(getTotalNumInputChannels(),samplesPerBlock);
     m_spectrogram.setSamplerate(sampleRate);
-    m_spectrogram.setmemoryTime_s(2.0);
-    m_spectrogram.setFFTSize(512);
+    m_spectrogram.setmemoryTime_s(8.0);
+    m_spectrogram.setFFTSize(1024);
     m_spectrogram.setfeed_percent(Spectrogram::FeedPercentage::perc50);
 }
 

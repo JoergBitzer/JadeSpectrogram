@@ -1,10 +1,12 @@
 #include "Spectrogram.h"
 
 #include <cmath>
+#include <stdlib.h>    
+#include <time.h>    
 
 Spectrogram::Spectrogram()
 :m_fs(48000.0),m_channels(2), m_feed_percent (100.0), m_feed_samples(-1), m_memsize_s(20.0),
-m_fftsize(1024),m_feedcounter(0),m_inCounter(0),m_feedblocks(1)
+m_fftsize(1024),m_feedcounter(0),m_inCounter(0),m_feedblocks(1),m_newEntryCounter(0),m_memCounter(0)
 {
     m_mode = Spectrogram::ChannelMixMode::AbsMean;
     m_windowChoice = Spectrogram::Windows::Hann;
@@ -23,18 +25,6 @@ int Spectrogram::processSynchronBlock(std::vector <std::vector<float>>& data, ju
         }
         m_inCounter++;
     }
-    if (m_inCounter == 2*m_fftsize) // copy data to the beginning
-    {
-        m_inCounter = m_fftsize;
-        for (size_t kk = 0; kk < m_fftsize ; ++kk)
-        {
-            for (size_t cc = 0 ; cc < m_channels ; ++cc)
-            {
-                m_indatamem[cc][kk] = m_indatamem[cc][kk+m_fftsize];
-            }
-        }
-    }
-
 
     for (int bb = 0; bb < m_feedblocks; bb++)
     {
@@ -94,9 +84,31 @@ int Spectrogram::processSynchronBlock(std::vector <std::vector<float>>& data, ju
             m_powerfinal.at(kk) = 20.0*log10(m_powerfinal.at(kk) + g_minValForLogSpectrogram);
         }
         // save into mem
-        m_mem.push(m_powerfinal);
-        m_mem.pop();
+        m_protect.enter();
+        //m_mem.push_back(m_powerfinal);
+        m_newEntryCounter++;
+        //m_mem.pop_front();
+        m_mem[m_memCounter] = m_powerfinal;
+        m_memCounter++;
+        if (m_memCounter == m_memsize_blocks)
+            m_memCounter = 0;
+
+
+        m_protect.exit();
     }
+    if (m_inCounter == 2*m_fftsize) // copy data to the beginning
+    {
+        m_inCounter = m_fftsize;
+        for (size_t kk = 0; kk < m_fftsize ; ++kk)
+        {
+            for (size_t cc = 0 ; cc < m_channels ; ++cc)
+            {
+                m_indatamem[cc][kk] = m_indatamem[cc][kk+m_fftsize];
+            }
+        }
+    }
+
+
     return 0;
 }
 
@@ -185,7 +197,9 @@ void Spectrogram::buildmem()
         std::vector<float> in;
         in.resize(m_freqsize);
         std::fill(in.begin(),in.end(),-120.0); // fill with -120 dB = silence
-        m_mem.push(in);
+        m_protect.enter();
+        m_mem.push_back(in);
+        m_protect.exit();
     }
     m_intime.resize(m_fftsize);
     m_powerfinal.resize(m_freqsize);
@@ -198,6 +212,7 @@ void Spectrogram::buildmem()
         std::fill(m_indatamem[cc].begin(),m_indatamem[cc].end(),0.0);
     }
     m_inCounter = m_fftsize;
+    m_newEntryCounter = 0;
 }
 void Spectrogram::setWindowFkt()
 {
@@ -215,4 +230,97 @@ void Spectrogram::setWindowFkt()
             break;
         }
     }
+}
+int Spectrogram::getMem(std::deque<std::vector<float >>& mem, int& pos)
+{
+    mem = m_mem;
+
+    int newVals = m_newEntryCounter;
+    m_newEntryCounter = 0;
+    pos = m_memCounter;
+    return newVals;
+}
+
+SpectrogramComponent::SpectrogramComponent(Spectrogram& spectrogram)
+:m_scaleFactor(1.f),m_spectrogram(spectrogram),
+m_internalImg(Image::RGB,1,1,true),m_plottetImg(Image::RGB,1,1,true),m_internalWidth(1),
+m_internalHeight(1), m_recomputeAll(true),m_maxColorVal(40.0),m_minColorVal(-120.0)
+{
+    startTimer(40) ;
+    srand (time(NULL));
+}
+void SpectrogramComponent::paint(Graphics& g)
+{
+    g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId).darker(0.2));
+
+    int w = getWidth();
+    int h = getHeight();
+
+    g.drawImage(m_internalImg,0,0,0.9*w,h,0,0,m_internalWidth,m_internalHeight);
+
+}
+void SpectrogramComponent::resized() 
+{
+
+
+}
+void SpectrogramComponent::timerCallback()
+{
+    int wData = m_spectrogram.getMemorySize();
+    int hData = m_spectrogram.getSpectrumSize();
+    if (wData != m_internalWidth || hData != m_internalHeight)
+    {
+        m_internalWidth = wData;
+        m_internalHeight = hData;
+        m_internalImg = m_internalImg.rescaled(m_internalWidth,m_internalHeight);
+    }
+    std::deque<std::vector<float >> mem;
+    int pos;
+    int newVals = m_spectrogram.getMem(mem,pos);
+    if (newVals > m_internalWidth)
+    {
+        m_recomputeAll = true;
+    }
+    CriticalSection crit;
+    crit.enter();
+    if (m_recomputeAll == true)
+    {
+        for (size_t ww = 0; ww < m_internalWidth; ++ww)
+        {
+            for (size_t hh = 0; hh < m_internalHeight; ++hh)
+            {
+                float val = mem[ww][hh];
+                if (val > m_maxColorVal)
+                    val = m_maxColorVal;
+                if (val < m_minColorVal)
+                    val = m_minColorVal;
+                
+                float ScaledVal = (val - m_minColorVal)/(m_maxColorVal-m_minColorVal);
+
+                // Colormap grey first
+                int red = int(ScaledVal*255)<<16;
+                int green = int(ScaledVal*255)<<8;
+                int blue = int(ScaledVal*255);
+                int alpha = 255<<24;
+                int color = red + green + blue + alpha;
+                m_internalImg.setPixelAt(ww,m_internalHeight-1-hh,juce::Colour(color));
+
+            }
+        }
+        for (size_t hh = 0; hh < m_internalHeight; ++hh)
+        {
+            m_internalImg.setPixelAt(pos,m_internalHeight-1-hh,juce::Colours::red);
+        }
+    }
+    crit.exit();
+
+/*
+    m_internalImg.moveImageSection(0,0,1,0,m_internalWidth-1,m_internalHeight);
+    //int x = m_internalWidth* float(rand())/RAND_MAX;
+    int y = m_internalHeight* float(rand())/RAND_MAX;
+    unsigned int color = pow(2,24) * float(rand())/RAND_MAX;
+    color = color|0xFF000000;
+    m_internalImg.setPixelAt(m_internalWidth-1,y,juce::Colour(color));
+ //*/   
+    repaint();
 }

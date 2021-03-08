@@ -3,6 +3,7 @@
 #include "PluginEditor.h"
 #include "PlugInGUISettings.h"
 
+
 //==============================================================================
 #if WITH_MIDIKEYBOARD   
 JadeSpectrogramAudioProcessorEditor::JadeSpectrogramAudioProcessorEditor (JadeSpectrogramAudioProcessor& p)
@@ -10,7 +11,7 @@ JadeSpectrogramAudioProcessorEditor::JadeSpectrogramAudioProcessorEditor (JadeSp
     	m_keyboard(m_processorRef.m_keyboardState, MidiKeyboardComponent::Orientation::horizontalKeyboard)
 #else
 JadeSpectrogramAudioProcessorEditor::JadeSpectrogramAudioProcessorEditor (JadeSpectrogramAudioProcessor& p)
-    : AudioProcessorEditor (&p), m_processorRef (p), m_presetGUI(p.m_presets)
+    : AudioProcessorEditor (&p), m_processorRef (p), m_presetGUI(p.m_presets),m_spec(p.m_spectrogram)
 #endif
 {
 
@@ -22,7 +23,7 @@ JadeSpectrogramAudioProcessorEditor::JadeSpectrogramAudioProcessorEditor (JadeSp
 #if WITH_MIDIKEYBOARD      
 	addAndMakeVisible(m_keyboard);
 #endif
-
+    addAndMakeVisible(m_spec);
 }
 
 JadeSpectrogramAudioProcessorEditor::~JadeSpectrogramAudioProcessorEditor()
@@ -34,10 +35,6 @@ void JadeSpectrogramAudioProcessorEditor::paint (juce::Graphics& g)
 {
     // (Our component is opaque, so we must completely fill the background with a solid colour)
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
-
-    g.setColour (juce::Colours::white);
-    g.setFont (15.0f);
-    g.drawFittedText ("Hello World!", getLocalBounds(), juce::Justification::centred, 1);
 }
 const int g_minPresetHandlerHeight(30);
 const float g_midikeyboardratio(0.13);
@@ -60,4 +57,5 @@ void JadeSpectrogramAudioProcessorEditor::resized()
 	float scaleFactor = float(width)/g_minGuiSize_x;
 
     // use setBounds with scaleFactor
+    m_spec.setBounds(scaleFactor*g_spec_x,scaleFactor*g_spec_y,scaleFactor*g_spec_width,scaleFactor*g_spec_height);
 }

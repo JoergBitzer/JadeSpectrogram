@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include <queue>
+#include <deque>
 
 #include "SynchronBlockProcessor.h"
 #include "FFT.h"
@@ -43,7 +43,12 @@ public:
     void setfeed_percent (FeedPercentage feed);
     size_t getnextpowerof2(float fftsize_ms);
 
+    int getSpectrumSize(){return m_freqsize;};
+    int getMemorySize(){return m_memsize_blocks;};
+    int getMem(std::deque<std::vector<float >>& mem, int& pos);
+
 private:
+    CriticalSection m_protect;
     float m_fs;
     size_t m_channels;
     float m_feed_percent;
@@ -54,7 +59,9 @@ private:
     size_t m_freqsize;
     size_t m_fftsize;
     ChannelMixMode m_mode;
-    std::queue<std::vector<float >> m_mem;
+    std::deque<std::vector<float >> m_mem;
+    int m_newEntryCounter;
+    int m_memCounter;
 
     std::vector<float> m_intime;
     std::vector<std::vector<float>> m_indatamem;
@@ -73,4 +80,29 @@ private:
     void computePowerSpectrum(std::vector<float>& in, std::vector<float>& power);
     void setWindowFkt();
 
+};
+
+class SpectrogramComponent : public Component, public Timer
+{
+public:
+    SpectrogramComponent(Spectrogram& spectrogram);
+    ~SpectrogramComponent(){stopTimer();};
+	void paint(Graphics& g) override;
+	void resized() override;
+    void setScaleFactor(float newscale){m_scaleFactor = newscale;};
+    void timerCallback() override;
+private:
+    float m_scaleFactor;
+    Spectrogram& m_spectrogram;
+
+    Image m_internalImg;
+    Image m_plottetImg;
+    int m_internalWidth;
+    int m_internalHeight;
+    bool m_recomputeAll;
+
+
+    float m_maxColorVal;
+    float m_minColorVal;
+ 
 };

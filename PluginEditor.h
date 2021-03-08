@@ -3,7 +3,7 @@
 #include "PluginProcessor.h"
 #include "JadeLookAndFeel.h"
 #include "PresetHandler.h"
-
+#include "Spectrogram.h"
 
 //==============================================================================
 class JadeSpectrogramAudioProcessorEditor  : public juce::AudioProcessorEditor
@@ -27,6 +27,7 @@ private:
     MidiKeyboardComponent m_keyboard;
 #endif
     // plugin specific components
+    SpectrogramComponent m_spec;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (JadeSpectrogramAudioProcessorEditor)
 };
