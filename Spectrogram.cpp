@@ -4,16 +4,24 @@
 #include <stdlib.h>    
 #include <time.h>    
 
+#include "PlugInGUISettings.h"
+
 Spectrogram::Spectrogram()
 :m_fs(48000.0),m_channels(2), m_feed_percent (100.0), m_feed_samples(-1), m_memsize_s(20.0),
 m_fftsize(1024),m_feedcounter(0),m_inCounter(0),m_feedblocks(1),m_newEntryCounter(0),m_memCounter(0)
 {
     m_mode = Spectrogram::ChannelMixMode::AbsMean;
-    m_windowChoice = Spectrogram::Windows::Hann;
+    m_windowChoice = Spectrogram::Windows::BlackmanHarris;
     buildmem();
 }
-
-float g_minValForLogSpectrogram(0.000001f);
+void Spectrogram::prepareParameter(std::unique_ptr<AudioProcessorValueTreeState>& vts)
+{
+    m_SpecParameter.m_DisplayMinFreq = vts->getRawParameterValue(paramDisplayMinFreq.ID);
+	m_SpecParameter.m_DisplayMinFreqOld = paramDisplayMinFreq.defaultValue;
+    m_SpecParameter.m_DisplayMaxFreq = vts->getRawParameterValue(paramDisplayMaxFreq.ID);
+	m_SpecParameter.m_DisplayMaxFreqOld = paramDisplayMaxFreq.defaultValue;
+}
+float g_minValForLogSpectrogram(0.00000000001f);
 int Spectrogram::processSynchronBlock(std::vector <std::vector<float>>& data, juce::MidiBuffer& midiMessages)
 {
     juce::ignoreUnused(midiMessages);
@@ -81,7 +89,7 @@ int Spectrogram::processSynchronBlock(std::vector <std::vector<float>>& data, ju
                     
                     break;
             }
-            m_powerfinal.at(kk) = 20.0*log10(m_powerfinal.at(kk) + g_minValForLogSpectrogram);
+            m_powerfinal.at(kk) = 10.0*log10(m_powerfinal.at(kk) + g_minValForLogSpectrogram);
         }
         // save into mem
         m_protect.enter();
@@ -220,14 +228,43 @@ void Spectrogram::setWindowFkt()
 
     for (size_t kk = 0; kk < m_fftsize ; kk++)
     {
+        float a0;
+        float a1;
+        float a2;
+        float a3;
+        float a4;
         switch (m_windowChoice)
         {
             case Spectrogram::Windows::Rect:
                 m_window[kk] = 1.f;
             break;
             case Spectrogram::Windows::Hann:
-                m_window[kk] = 0.5f*(1.f-cos(2*M_PI*kk/m_fftsize));
-            break;
+                m_window[kk] = 0.5f*(1.f-cos(2.0*M_PI*kk/m_fftsize));
+                break;
+            case Spectrogram::Windows::Hamming:
+                m_window[kk] = 25.0/46.0-(1.0-25.0/46.0)*cos(2.0*M_PI*kk/m_fftsize);
+                break;
+            case Spectrogram::Windows::BlackmanHarris:
+                a0 = 0.35875;
+                a1 = 0.48829;
+                a2 = 0.14128;
+                a3 = 0.01168;
+                m_window[kk] = a0 - a1*cos(2.0*M_PI*kk/m_fftsize) + a2*cos(4.0*M_PI*kk/m_fftsize) - a3*cos(6.0*M_PI*kk/m_fftsize);
+                break;
+            case Spectrogram::Windows::FlatTop:
+                a0 = 0.21557895;
+                a1 = 0.41663158;
+                a2 = 0.277263158;
+                a3 = 0.083578947;
+                a4 = 0.006947368;
+                m_window[kk] = a0 - a1*cos(2.0*M_PI*kk/m_fftsize) + a2*cos(4.0*M_PI*kk/m_fftsize) 
+                             - a3*cos(6.0*M_PI*kk/m_fftsize) + a4*cos(8.0*M_PI*kk/m_fftsize);
+                break;
+            case Spectrogram::Windows::HannPoisson:
+                float alpha = 3.0;
+                m_window[kk] = 0.5f*(1.f-cos(2.0*M_PI*kk/m_fftsize))
+                                *exp(-alpha*fabs(m_fftsize-2*kk)/m_fftsize);
+                break;
         }
     }
 }
@@ -241,13 +278,36 @@ int Spectrogram::getMem(std::deque<std::vector<float >>& mem, int& pos)
     return newVals;
 }
 
-SpectrogramComponent::SpectrogramComponent(Spectrogram& spectrogram)
-:m_scaleFactor(1.f),m_spectrogram(spectrogram),
-m_internalImg(Image::RGB,1,1,true),m_plottetImg(Image::RGB,1,1,true),m_internalWidth(1),
-m_internalHeight(1), m_recomputeAll(true),m_maxColorVal(40.0),m_minColorVal(-120.0)
+SpectrogramComponent::SpectrogramComponent(AudioProcessorValueTreeState& vts, Spectrogram& spectrogram)
+:m_scaleFactor(1.f),m_spectrogram(spectrogram),m_vts(vts),
+m_internalImg(Image::RGB,1,1,true),m_internalWidth(1),
+m_internalHeight(1), m_recomputeAll(true),m_maxColorVal(g_minColorVal),m_minColorVal(g_minColorVal),
+m_colorpalette(256,5),m_maxDisplayFreq(20000.f),m_minDisplayFreq(0.f),somethingChanged(nullptr)
 {
     startTimer(40) ;
     srand (time(NULL));
+    m_colorpalette.setValueRange(m_minColorVal,m_maxColorVal);
+
+// UI Elements
+	m_DisplayMinFreqLabel.setText("Freq.", NotificationType::dontSendNotification);
+	m_DisplayMinFreqLabel.setJustificationType(Justification::centred);
+	//m_DisplayMinFreqLabel.attachToComponent (&m_DisplayMinFreqSlider, false);
+	//addAndMakeVisible(m_DisplayMinFreqLabel);
+	m_DisplayMinFreqSlider.setSliderStyle(Slider::SliderStyle::LinearVertical);
+	m_DisplayMinFreqAttachment = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(m_vts, paramDisplayMinFreq.ID, m_DisplayMinFreqSlider);
+	addAndMakeVisible(m_DisplayMinFreqSlider);
+	m_DisplayMinFreqSlider.onValueChange = [this]() {if (somethingChanged != nullptr) somethingChanged(); };
+
+	m_DisplayMaxFreqLabel.setText("Freq.", NotificationType::dontSendNotification);
+	m_DisplayMaxFreqLabel.setJustificationType(Justification::centred);
+	//m_DisplayMaxFreqLabel.attachToComponent (&m_DisplayMaxFreqSlider, false);
+	//addAndMakeVisible(m_DisplayMaxFreqLabel);
+	m_DisplayMaxFreqSlider.setSliderStyle(Slider::SliderStyle::LinearVertical);
+	m_DisplayMaxFreqAttachment = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(m_vts, paramDisplayMaxFreq.ID, m_DisplayMaxFreqSlider);
+	addAndMakeVisible(m_DisplayMaxFreqSlider);
+	m_DisplayMaxFreqSlider.onValueChange = [this]() {if (somethingChanged != nullptr) somethingChanged(); };
+
+
 }
 void SpectrogramComponent::paint(Graphics& g)
 {
@@ -256,11 +316,99 @@ void SpectrogramComponent::paint(Graphics& g)
     int w = getWidth();
     int h = getHeight();
 
-    g.drawImage(m_internalImg,0,0,0.9*w,h,0,0,m_internalWidth,m_internalHeight);
+    float fs = m_spectrogram.getSamplerate();
+    
+    m_minDisplayFreq = exp(m_DisplayMinFreqSlider.getValue());
+    m_maxDisplayFreq = exp(m_DisplayMaxFreqSlider.getValue());
+
+    if (m_minDisplayFreq >= fs*0.5)
+        m_minDisplayFreq = 0.9*fs*0.5;
+    if (m_maxDisplayFreq >= fs*0.5)
+        m_maxDisplayFreq = fs*0.5;
+
+    if (m_minDisplayFreq >= m_maxDisplayFreq)
+    {
+        m_minDisplayFreq = 0.9*m_maxDisplayFreq;
+        m_DisplayMinFreqSlider.setValue(log(m_minDisplayFreq));
+    }
+
+    int displayStartPixel = 2.0*m_minDisplayFreq/fs *m_internalHeight;
+    int displayEndPixel = 2.0*m_maxDisplayFreq/fs *m_internalHeight;
+
+    int hStart = m_internalHeight - displayEndPixel;
+
+    int wStartPic = m_scaleFactor*(g_SliderWidth + g_FreqMeter);
+
+    g.drawImage(m_internalImg,wStartPic,0,0.8*w,h-m_scaleFactor*g_menuHeight,
+                0,hStart,m_internalWidth,displayEndPixel-displayStartPixel);
+    
+    // Add frequency scale
+    int nrOfYTicks = 11;
+    float RangePerTick = float(m_maxDisplayFreq - m_minDisplayFreq)/(nrOfYTicks-1);
+    int TextHeight = 20;
+    for (auto kk = 0; kk < nrOfYTicks; ++kk)
+    {
+        float newExaktFreq = int(m_minDisplayFreq + RangePerTick*kk + 0.5);
+        String OutText;
+        if (newExaktFreq >= 1000.f)
+        {
+            newExaktFreq = int(newExaktFreq*0.01 +0.5)*100;
+            OutText += String(newExaktFreq/1000);
+            OutText += "k";
+        }
+        else
+        {
+            if (newExaktFreq >= 150.f)
+            {
+                newExaktFreq = int(newExaktFreq*0.1 +0.5)*10;
+                OutText += String(newExaktFreq);
+            }
+            else
+            {
+                 OutText += String(newExaktFreq);
+            }
+        }
+        
+        
+
+
+        int ydelta = (h-m_scaleFactor*g_menuHeight)* (newExaktFreq-m_minDisplayFreq)/(m_maxDisplayFreq - m_minDisplayFreq);
+        int x = wStartPic-g_FreqMeter*m_scaleFactor;
+        int y ;
+        if (kk < nrOfYTicks-1)
+            y = h-m_scaleFactor*g_menuHeight-0.5*TextHeight*m_scaleFactor - ydelta;
+        else
+        {
+            y = h-m_scaleFactor*g_menuHeight - ydelta;
+        }
+        
+        g.drawText(OutText,x,y,g_FreqMeter*m_scaleFactor,m_scaleFactor*TextHeight,
+                juce::Justification::centred,true);
+    }
+
+    // Plot Colorbar
+    int cbHeight = h-m_scaleFactor*g_menuHeight;
+    Image colorbar(Image::RGB,1,cbHeight,true);
+    for (int kk = 0; kk < cbHeight; kk++)
+    {   
+        float val = float(kk)/cbHeight*(g_maxColorVal - g_minColorVal) + g_minColorVal;
+        int color = m_colorpalette.getRGBColor(val);
+        color = color|0xFF000000; // kein alpha blending
+        colorbar.setPixelAt(0,cbHeight-1-kk,juce::Colour(color));
+    }
+    g.drawImage(colorbar,w-m_scaleFactor*(g_colorbar_width+g_FreqMeter + g_SliderWidth),0,m_scaleFactor*g_colorbar_width,h-m_scaleFactor*g_menuHeight,
+                0,0,1,cbHeight);
+
+    // draw scale
+
 
 }
 void SpectrogramComponent::resized() 
 {
+    m_DisplayMaxFreqSlider.setBounds(m_scaleFactor*g_SliderMaxFreq_x,m_scaleFactor*g_SliderMaxFreq_y,
+            m_scaleFactor*g_SliderWidth,m_scaleFactor*g_SliderHeight);
+    m_DisplayMinFreqSlider.setBounds(m_scaleFactor*g_SliderMinFreq_x,m_scaleFactor*g_SliderMinFreq_y,
+            m_scaleFactor*g_SliderWidth,m_scaleFactor*g_SliderHeight);
 
 
 }
@@ -290,19 +438,9 @@ void SpectrogramComponent::timerCallback()
             for (size_t hh = 0; hh < m_internalHeight; ++hh)
             {
                 float val = mem[ww][hh];
-                if (val > m_maxColorVal)
-                    val = m_maxColorVal;
-                if (val < m_minColorVal)
-                    val = m_minColorVal;
-                
-                float ScaledVal = (val - m_minColorVal)/(m_maxColorVal-m_minColorVal);
 
-                // Colormap grey first
-                int red = int(ScaledVal*255)<<16;
-                int green = int(ScaledVal*255)<<8;
-                int blue = int(ScaledVal*255);
-                int alpha = 255<<24;
-                int color = red + green + blue + alpha;
+                int color = m_colorpalette.getRGBColor(val);
+                color = color|0xFF000000; // kein alpha blending
                 m_internalImg.setPixelAt(ww,m_internalHeight-1-hh,juce::Colour(color));
 
             }
@@ -323,4 +461,26 @@ void SpectrogramComponent::timerCallback()
     m_internalImg.setPixelAt(m_internalWidth-1,y,juce::Colour(color));
  //*/   
     repaint();
+}
+
+int SpectrogramParameter::addParameter(std::vector < std::unique_ptr<RangedAudioParameter>>& paramVector)
+{
+       	paramVector.push_back(std::make_unique<AudioParameterFloat>(paramDisplayMinFreq.ID,
+		paramDisplayMinFreq.name,
+		NormalisableRange<float>(paramDisplayMinFreq.minValue, paramDisplayMinFreq.maxValue),
+		paramDisplayMinFreq.defaultValue,
+		paramDisplayMinFreq.unitName,
+		AudioProcessorParameter::genericParameter,
+		[](float value, int MaxLen) { return (String(0.1*int(exp(value)*10 + 0.5), MaxLen)); },
+		[](const String& text) {return text.getFloatValue(); }));
+
+       	paramVector.push_back(std::make_unique<AudioParameterFloat>(paramDisplayMaxFreq.ID,
+		paramDisplayMaxFreq.name,
+		NormalisableRange<float>(paramDisplayMaxFreq.minValue, paramDisplayMaxFreq.maxValue),
+		paramDisplayMaxFreq.defaultValue,
+		paramDisplayMaxFreq.unitName,
+		AudioProcessorParameter::genericParameter,
+		[](float value, int MaxLen) { return (String(0.1*int(exp(value)*10 + 0.5), MaxLen)); },
+		[](const String& text) {return text.getFloatValue(); }));
+
 }

@@ -58,6 +58,7 @@ juce_generate_juce_header(AudioPluginJadeSpectrogram)
 
 target_sources(AudioPluginJadeSpectrogram
     PRIVATE
+        CColorpalette.cpp
         Spectrogram.cpp
         PluginEditor.cpp
         PluginProcessor.cpp

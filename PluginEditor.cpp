@@ -11,7 +11,7 @@ JadeSpectrogramAudioProcessorEditor::JadeSpectrogramAudioProcessorEditor (JadeSp
     	m_keyboard(m_processorRef.m_keyboardState, MidiKeyboardComponent::Orientation::horizontalKeyboard)
 #else
 JadeSpectrogramAudioProcessorEditor::JadeSpectrogramAudioProcessorEditor (JadeSpectrogramAudioProcessor& p)
-    : AudioProcessorEditor (&p), m_processorRef (p), m_presetGUI(p.m_presets),m_spec(p.m_spectrogram)
+    : AudioProcessorEditor (&p), m_processorRef (p), m_presetGUI(p.m_presets),m_spec(*p.m_parameterVTS, p.m_spectrogram)
 #endif
 {
 
@@ -57,5 +57,6 @@ void JadeSpectrogramAudioProcessorEditor::resized()
 	float scaleFactor = float(width)/g_minGuiSize_x;
 
     // use setBounds with scaleFactor
+    m_spec.setScaleFactor(scaleFactor);
     m_spec.setBounds(scaleFactor*g_spec_x,scaleFactor*g_spec_y,scaleFactor*g_spec_width,scaleFactor*g_spec_height);
 }

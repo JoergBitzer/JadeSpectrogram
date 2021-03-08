@@ -13,26 +13,8 @@ JadeSpectrogramAudioProcessor::JadeSpectrogramAudioProcessor()
                        )
 {
 
-    // It is important to have the paramter set in the m_paramVector
-    // e.g. (a better solution is to ue this function in the components)
-/*        m_paramVector.push_back(std::make_unique<AudioParameterFloat>(paramHpCutoff.ID,
-        paramHpCutoff.name,
-        NormalisableRange<float>(paramHpCutoff.minValue, paramHpCutoff.maxValue),
-        paramHpCutoff.defaultValue,
-        paramHpCutoff.unitName,
-        AudioProcessorParameter::genericParameter,
-        [](float value, int MaxLen) { value = int(exp(value) * 10) * 0.1;  return (String(value, MaxLen) + " Hz"); },
-        [](const String& text) {return text.getFloatValue(); }));
-//*/
-    // this is just a placeholder (necessary for compiling/testing the template)
-    m_paramVector.push_back(std::make_unique<AudioParameterFloat>("ExampeID",
-        "Exampple Name",
-        NormalisableRange<float>(1.f, 2.f),
-        1.5f,
-        "unitname",
-        AudioProcessorParameter::genericParameter));
-    
-    m_parameterVTS = std::make_unique<AudioProcessorValueTreeState>(*this, nullptr, Identifier("FiltarborVTS"),
+    m_specParameter.addParameter(m_paramVector);
+    m_parameterVTS = std::make_unique<AudioProcessorValueTreeState>(*this, nullptr, Identifier("SpectrogramVTS"),
         AudioProcessorValueTreeState::ParameterLayout(m_paramVector.begin(), m_paramVector.end()));
 
 	m_presets.setAudioValueTreeState(m_parameterVTS.get());
@@ -124,8 +106,8 @@ void JadeSpectrogramAudioProcessor::prepareToPlay (double sampleRate, int sample
     m_fs = sampleRate;
     m_spectrogram.preparetoProcess(getTotalNumInputChannels(),samplesPerBlock);
     m_spectrogram.setSamplerate(sampleRate);
-    m_spectrogram.setmemoryTime_s(8.0);
-    m_spectrogram.setFFTSize(1024);
+    m_spectrogram.setmemoryTime_s(10.0);
+    m_spectrogram.setFFTSize(2048);
     m_spectrogram.setfeed_percent(Spectrogram::FeedPercentage::perc50);
 }
 

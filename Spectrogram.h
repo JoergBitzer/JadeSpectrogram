@@ -5,6 +5,41 @@
 
 #include "SynchronBlockProcessor.h"
 #include "FFT.h"
+#include "CColorpalette.h"
+
+const struct
+{
+	const std::string ID = "MinFreq";
+	std::string name = "MinFreq";
+	std::string unitName = "Hz";
+	float minValue = log(30.f);
+	float maxValue = log(10000.f);
+	float defaultValue = log(30.f);
+}paramDisplayMinFreq;
+const struct
+{
+	const std::string ID = "MaxFreq";
+	std::string name = "MaxFreq";
+	std::string unitName = "Hz";
+	float minValue = log(500.f);
+	float maxValue = log(20000.f);
+	float defaultValue = log(20000.f);
+}paramDisplayMaxFreq;
+
+class SpectrogramParameter
+{
+public:
+	int addParameter(std::vector < std::unique_ptr<RangedAudioParameter>>& paramVector);
+
+public:
+    std::atomic<float>* m_DisplayMinFreq;
+    float m_DisplayMinFreqOld;
+    std::atomic<float>* m_DisplayMaxFreq;
+    float m_DisplayMaxFreqOld;
+};
+
+
+
 
 class Spectrogram : public SynchronBlockProcessor
 {
@@ -20,7 +55,11 @@ public:
     enum class Windows
     {
         Rect,
-        Hann
+        Hann,
+        Hamming,
+        BlackmanHarris,
+        FlatTop,
+        HannPoisson
     };
     enum class FeedPercentage
     {
@@ -33,6 +72,7 @@ public:
 
     // void prepareToPlay();
     virtual int processSynchronBlock(std::vector <std::vector<float>>&, juce::MidiBuffer& midiMessages);
+    void prepareParameter(std::unique_ptr<AudioProcessorValueTreeState>& vts);
 
     // setter
     void setSamplerate(float samplerate);
@@ -46,7 +86,7 @@ public:
     int getSpectrumSize(){return m_freqsize;};
     int getMemorySize(){return m_memsize_blocks;};
     int getMem(std::deque<std::vector<float >>& mem, int& pos);
-
+    float getSamplerate(){return m_fs;};
 private:
     CriticalSection m_protect;
     float m_fs;
@@ -79,24 +119,25 @@ private:
     void buildmem();
     void computePowerSpectrum(std::vector<float>& in, std::vector<float>& power);
     void setWindowFkt();
-
+    SpectrogramParameter m_SpecParameter;
 };
 
 class SpectrogramComponent : public Component, public Timer
 {
 public:
-    SpectrogramComponent(Spectrogram& spectrogram);
+    SpectrogramComponent(AudioProcessorValueTreeState& vts, Spectrogram& spectrogram);
     ~SpectrogramComponent(){stopTimer();};
 	void paint(Graphics& g) override;
 	void resized() override;
     void setScaleFactor(float newscale){m_scaleFactor = newscale;};
     void timerCallback() override;
+    std::function<void()> somethingChanged;    
 private:
     float m_scaleFactor;
     Spectrogram& m_spectrogram;
 
     Image m_internalImg;
-    Image m_plottetImg;
+    Image m_ColorbarImg;
     int m_internalWidth;
     int m_internalHeight;
     bool m_recomputeAll;
@@ -104,5 +145,21 @@ private:
 
     float m_maxColorVal;
     float m_minColorVal;
+    CColorPalette m_colorpalette;
+
+    float m_maxDisplayFreq;
+    float m_minDisplayFreq;
+
+// Othe UI Elements
+    AudioProcessorValueTreeState& m_vts; 
+
+    Label m_DisplayMinFreqLabel;
+    Slider m_DisplayMinFreqSlider;
+    std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> m_DisplayMinFreqAttachment;
+
+    Label m_DisplayMaxFreqLabel;
+    Slider m_DisplayMaxFreqSlider;
+    std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> m_DisplayMaxFreqAttachment;
+    
  
 };

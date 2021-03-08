@@ -59,6 +59,7 @@ private:
 #endif
     // Your plugin stuff
     Spectrogram m_spectrogram;
+    SpectrogramParameter m_specParameter;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (JadeSpectrogramAudioProcessor)
 };
