@@ -12,7 +12,8 @@ public:
 		kHot,
 		kRainbow,
 		kViridis,
-		kPlasma
+		kPlasma,
+		kJade
 	};
 
 	CColorPalette(); // MonoChrome

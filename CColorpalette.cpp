@@ -50,6 +50,9 @@ void CColorPalette::setValueRange (float Min, float Max)
 		m_Min = Max;
 		m_Max = Min;
 	}
+	if (m_Max == m_Min)
+		m_Min = 0.99*m_Max;
+
 	m_AccessMult = float(m_NrOfColors)/(m_Max-m_Min);
 }
 void CColorPalette::setNrOfColors (int NrOfColors)
@@ -269,6 +272,7 @@ void CColorPalette::ComputeColors(void)
 			else
 				m_Color[kk] = iColor;
 		}
+		break;
 	case kPlasma:
 		for (kk = 0; kk < m_NrOfColors ; kk++)
 		{
@@ -279,6 +283,51 @@ void CColorPalette::ComputeColors(void)
 			int iRed = int(cm_plasma[index][0]*255)<<16;
 			int iGreen = int(cm_plasma[index][1]*255)<<8 ; 			
 			int iBlue = int(cm_plasma[index][2]*255);
+			int iColor = iRed|iGreen|iBlue;
+
+			if (m_InvertScheme)
+				m_Color[m_NrOfColors-kk-1] = iColor;
+			else
+				m_Color[kk] = iColor;
+		}
+		break;
+	case kJade:
+		float redstart = 0.3529;
+		float redmid = 0.89019;
+		float redend = 0.95;
+
+		float greenstart = 0.372549;
+		float greenmid = 0.023529;
+		float greenend = 0.95;
+
+		float bluestart = 0.33725;
+		float bluemid = 0.074509;
+		float blueend = 0.95;
+
+		int MixPoint = 2*m_NrOfColors/4;
+
+		for (kk = 0; kk < m_NrOfColors ; kk++)
+		{
+
+			int iRed;
+			int iGreen ; 			
+			int iBlue ;
+			if (kk < MixPoint)
+			{
+
+				iBlue = int(255*(float(kk)/MixPoint * (bluemid-bluestart) + bluestart));
+				iGreen = int(255*(float(kk)/MixPoint * (greenmid-greenstart) + greenstart));
+				iRed = int(255*(float(kk)/MixPoint * (redmid-redstart) + redstart));
+			}
+			else 
+			{
+				iBlue = int(255*(float(kk-MixPoint)/MixPoint * (blueend-bluemid) + bluemid));
+				iGreen = int(255*(float(kk-MixPoint)/MixPoint * (greenend-greenmid) + greenmid));
+				iRed = int(255*(float(kk-MixPoint)/MixPoint * (redend-redmid) + redmid));
+	
+			}
+			iRed = iRed << 16;
+			iGreen = iGreen << 8;
 			int iColor = iRed|iGreen|iBlue;
 
 			if (m_InvertScheme)

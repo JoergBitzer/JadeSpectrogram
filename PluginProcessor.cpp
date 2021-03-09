@@ -12,7 +12,7 @@ JadeSpectrogramAudioProcessor::JadeSpectrogramAudioProcessor()
                      #endif
                        )
 {
-
+   
     m_specParameter.addParameter(m_paramVector);
     m_parameterVTS = std::make_unique<AudioProcessorValueTreeState>(*this, nullptr, Identifier("SpectrogramVTS"),
         AudioProcessorValueTreeState::ParameterLayout(m_paramVector.begin(), m_paramVector.end()));

@@ -6,6 +6,7 @@
 #include "SynchronBlockProcessor.h"
 #include "FFT.h"
 #include "CColorpalette.h"
+#include "PlugInGUISettings.h"
 
 const struct
 {
@@ -26,6 +27,26 @@ const struct
 	float defaultValue = log(20000.f);
 }paramDisplayMaxFreq;
 
+const struct
+{
+	const std::string ID = "MinColor";
+	std::string name = "MinColor";
+	std::string unitName = "Hz";
+	float minValue = g_minColorVal;
+	float maxValue = g_maxColorVal;
+	float defaultValue = g_minColorVal;
+}paramDisplayMinColor;
+const struct
+{
+	const std::string ID = "MaxColor";
+	std::string name = "MaxColor";
+	std::string unitName = "Hz";
+	float minValue = g_minColorVal;
+	float maxValue = g_maxColorVal;
+	float defaultValue =g_maxColorVal;
+}paramDisplayMaxColor;
+
+
 class SpectrogramParameter
 {
 public:
@@ -36,6 +57,10 @@ public:
     float m_DisplayMinFreqOld;
     std::atomic<float>* m_DisplayMaxFreq;
     float m_DisplayMaxFreqOld;
+    std::atomic<float>* m_DisplayMinColor;
+    float m_DisplayMinColorOld;
+    std::atomic<float>* m_DisplayMaxColor;
+    float m_DisplayMaxColorOld;
 };
 
 
@@ -81,12 +106,17 @@ public:
     void setclosestFFTSize_ms(float fftsize_ms);
     void setmemoryTime_s (float memsize_s);
     void setfeed_percent (FeedPercentage feed);
+    void setRunningMode (bool mode){m_isdisplayRunning = mode;};
+    void setPauseMode (bool mode){m_PauseMode = mode;};
+    void setWindow (Spectrogram::Windows win){m_windowChoice = win;setWindowFkt();};
+    
     size_t getnextpowerof2(float fftsize_ms);
 
     int getSpectrumSize(){return m_freqsize;};
     int getMemorySize(){return m_memsize_blocks;};
     int getMem(std::deque<std::vector<float >>& mem, int& pos);
     float getSamplerate(){return m_fs;};
+    bool isRunningMode(){return m_isdisplayRunning;};
 private:
     CriticalSection m_protect;
     float m_fs;
@@ -120,6 +150,9 @@ private:
     void computePowerSpectrum(std::vector<float>& in, std::vector<float>& power);
     void setWindowFkt();
     SpectrogramParameter m_SpecParameter;
+
+    bool m_isdisplayRunning;
+    bool m_PauseMode;
 };
 
 class SpectrogramComponent : public Component, public Timer
@@ -132,6 +165,7 @@ public:
     void setScaleFactor(float newscale){m_scaleFactor = newscale;};
     void timerCallback() override;
     std::function<void()> somethingChanged;    
+    void mouseMove (const MouseEvent& event);    
 private:
     float m_scaleFactor;
     Spectrogram& m_spectrogram;
@@ -160,6 +194,25 @@ private:
     Label m_DisplayMaxFreqLabel;
     Slider m_DisplayMaxFreqSlider;
     std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> m_DisplayMaxFreqAttachment;
+
+    Label m_DisplayMinColorLabel;
+    Slider m_DisplayMinColorSlider;
+    std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> m_DisplayMinColorAttachment;
+
+    Label m_DisplayMaxColorLabel;
+    Slider m_DisplayMaxColorSlider;
+    std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> m_DisplayMaxColorAttachment;
+
+    TextButton m_runModeButton;
+    TextButton m_pauseButton;
+    void pauseClicked();
+    void runClicked();
+    bool m_isPaused;
+    bool m_isRunning;
+
+    ComboBox m_colorScheme;
+    ComboBox m_windowFktCombo;
     
- 
+    Label m_FreqLabel;
+
 };
