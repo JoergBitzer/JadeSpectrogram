@@ -7,9 +7,9 @@
 #include "Spectrogram.h"
 
 Spectrogram::Spectrogram()
-:m_fs(48000.0),m_channels(2), m_feed_percent (100.0), m_feed_samples(-1), m_memsize_s(1.0),
+:SynchronBlockProcessor(), m_fs(48000.0),m_channels(2), m_feed_percent (100.0), m_feed_samples(-1), m_memsize_s(1.0),
 m_fftsize(1024),m_feedcounter(0),m_inCounter(0),m_feedblocks(1),m_newEntryCounter(0),
-m_memCounter(0),m_isdisplayRunning(true),m_PauseMode(false),SynchronBlockProcessor()
+m_memCounter(0),m_fft(1024), m_isdisplayRunning(true),m_PauseMode(false)
 {
     m_mode = Spectrogram::ChannelMixMode::AbsMean;
     m_windowChoice = Spectrogram::Windows::Hann;
@@ -211,7 +211,7 @@ void Spectrogram::buildmem()
     m_feed_samples = int(m_feed_percent*0.01*m_fftsize);
     m_memsize_blocks = int(m_memsize_s*m_fs/m_feed_samples + 0.5);
     m_freqsize = m_fftsize/2+1;
-    m_mem = {};
+    m_mem.clear();
     for (auto kk = 0 ; kk< m_memsize_blocks; kk++)
     {
         std::vector<float> in;
@@ -227,9 +227,9 @@ void Spectrogram::buildmem()
     m_indatamem.resize(m_channels);
     for (size_t cc = 0 ; cc < m_channels ; ++cc)
     {
-        m_power[cc].resize(m_freqsize);
-        m_indatamem[cc].resize(2*m_fftsize);
-        std::fill(m_indatamem[cc].begin(),m_indatamem[cc].end(),0.0);
+        m_power.at(cc).resize(m_freqsize);
+        m_indatamem.at(cc).resize(2*m_fftsize);
+        std::fill(m_indatamem.at(cc).begin(),m_indatamem.at(cc).end(),0.0);
     }
     m_inCounter = m_fftsize;
     m_newEntryCounter = 0;
@@ -649,7 +649,7 @@ int SpectrogramParameter::addParameter(std::vector < std::unique_ptr<RangedAudio
 		AudioProcessorParameter::genericParameter,
 		[](float value, int MaxLen) { return (String(0.1*int(exp(value)*10 + 0.5), MaxLen)); },
 		[](const String& text) {return text.getFloatValue(); }));
-/*
+
        	paramVector.push_back(std::make_unique<AudioParameterFloat>(paramDisplayMaxFreq.ID,
 		paramDisplayMaxFreq.name,
 		NormalisableRange<float>(paramDisplayMaxFreq.minValue, paramDisplayMaxFreq.maxValue),

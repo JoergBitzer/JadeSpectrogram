@@ -12,7 +12,43 @@ JadeSpectrogramAudioProcessor::JadeSpectrogramAudioProcessor()
                      #endif
                        )
 {
-   
+/*   	m_paramVector.push_back(std::make_unique<AudioParameterFloat>(paramDisplayMinFreq.ID,
+		paramDisplayMinFreq.name,
+		NormalisableRange<float>(paramDisplayMinFreq.minValue, paramDisplayMinFreq.maxValue),
+		paramDisplayMinFreq.defaultValue,
+		paramDisplayMinFreq.unitName,
+		AudioProcessorParameter::genericParameter,
+		[](float value, int MaxLen) { return (String(0.1*int(exp(value)*10 + 0.5), MaxLen)); },
+		[](const String& text) {return text.getFloatValue(); }));
+
+    m_paramVector.push_back(std::make_unique<AudioParameterFloat>(paramDisplayMaxFreq.ID,
+		paramDisplayMaxFreq.name,
+		NormalisableRange<float>(paramDisplayMaxFreq.minValue, paramDisplayMaxFreq.maxValue),
+		paramDisplayMaxFreq.defaultValue,
+		paramDisplayMaxFreq.unitName,
+		AudioProcessorParameter::genericParameter,
+		[](float value, int MaxLen) { return (String(0.1*int(exp(value)*10 + 0.5), MaxLen)); },
+		[](const String& text) {return text.getFloatValue(); }));
+
+    m_paramVector.push_back(std::make_unique<AudioParameterFloat>(paramDisplayMinColor.ID,
+		paramDisplayMinColor.name,
+		NormalisableRange<float>(paramDisplayMinColor.minValue, paramDisplayMinColor.maxValue),
+		paramDisplayMinColor.defaultValue,
+		paramDisplayMinColor.unitName,
+		AudioProcessorParameter::genericParameter,
+		[](float value, int MaxLen) { return (String(1.0*int((value) + 0.5), MaxLen)); },
+		[](const String& text) {return text.getFloatValue(); }));
+
+    m_paramVector.push_back(std::make_unique<AudioParameterFloat>(paramDisplayMaxColor.ID,
+		paramDisplayMaxColor.name,
+		NormalisableRange<float>(paramDisplayMaxColor.minValue, paramDisplayMaxColor.maxValue),
+		paramDisplayMaxColor.defaultValue,
+		paramDisplayMaxColor.unitName,
+		AudioProcessorParameter::genericParameter,
+		[](float value, int MaxLen) { return (String(1.0*int((value) + 0.5), MaxLen)); },
+		[](const String& text) {return text.getFloatValue(); }));
+    //m_paramVector.resize(4);
+    //m_paramVector.clear();*/
     m_specParameter.addParameter(m_paramVector);
     m_parameterVTS = std::make_unique<AudioProcessorValueTreeState>(*this, nullptr, Identifier("SpectrogramVTS"),
         AudioProcessorValueTreeState::ParameterLayout(m_paramVector.begin(), m_paramVector.end()));
@@ -107,8 +143,8 @@ void JadeSpectrogramAudioProcessor::prepareToPlay (double sampleRate, int sample
     m_fs = sampleRate;
     m_spectrogram.preparetoProcess(getTotalNumInputChannels(),samplesPerBlock);
     m_spectrogram.setSamplerate(sampleRate);
-    m_spectrogram.setmemoryTime_s(2.0);
-    m_spectrogram.setFFTSize(1024);
+    m_spectrogram.setmemoryTime_s(10.0);
+    m_spectrogram.setFFTSize(2048);
     m_spectrogram.setfeed_percent(Spectrogram::FeedPercentage::perc50);
 }
 
