@@ -50,6 +50,7 @@ const struct
 class SpectrogramParameter
 {
 public:
+    SpectrogramParameter(){};
 	int addParameter(std::vector < std::unique_ptr<RangedAudioParameter>>& paramVector);
 
 public:

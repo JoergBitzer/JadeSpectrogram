@@ -35,7 +35,7 @@ m_InvertScheme(0)
 }
 CColorPalette::~CColorPalette()
 {
-	delete[] m_Color;
+
 }
 	
 	// Methoden
@@ -58,9 +58,7 @@ void CColorPalette::setValueRange (float Min, float Max)
 void CColorPalette::setNrOfColors (int NrOfColors)
 {
 	m_NrOfColors = NrOfColors;
-	if (m_Color)
-		delete[] m_Color;
-	m_Color = 0;
+
 	m_AccessMult = float(m_NrOfColors)/(m_Max-m_Min);
 	AllocateColors();
 }
@@ -103,7 +101,7 @@ float CColorPalette::getValue(int iColor)
 }
 void CColorPalette::AllocateColors(void)
 {
-	m_Color = new int[m_NrOfColors];
+	m_Color.resize(m_NrOfColors);
 	ComputeColors();
 
 }

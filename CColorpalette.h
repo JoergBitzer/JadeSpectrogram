@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 #include "ColormapData.h"
 
 class CColorPalette
@@ -35,7 +36,7 @@ public:
 protected:
 	void ComputeColors(void);
 	void AllocateColors(void);
-	int *m_Color;
+	std::vector<int> m_Color;
 	int m_NrOfColors;
 	float m_Max;
 	float m_Min;
