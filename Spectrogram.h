@@ -31,7 +31,7 @@ const struct
 {
 	const std::string ID = "MinColor";
 	std::string name = "MinColor";
-	std::string unitName = "Hz";
+	std::string unitName = "";
 	float minValue = g_minColorVal;
 	float maxValue = g_maxColorVal;
 	float defaultValue = g_minColorVal;
@@ -40,7 +40,7 @@ const struct
 {
 	const std::string ID = "MaxColor";
 	std::string name = "MaxColor";
-	std::string unitName = "Hz";
+	std::string unitName = "";
 	float minValue = g_minColorVal;
 	float maxValue = g_maxColorVal;
 	float defaultValue =g_maxColorVal;

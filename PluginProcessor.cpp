@@ -25,6 +25,7 @@ JadeSpectrogramAudioProcessor::JadeSpectrogramAudioProcessor()
     // m_presets.addCategory(StringArray("Unknown", "Soft", "Medium", "Hard", "Experimental"));
     // m_presets.addCategory(JadeSynthCategories);
 	m_presets.loadfromFileAllUserPresets();    
+    m_spectrogram.prepareParameter(m_parameterVTS);
 }
 
 JadeSpectrogramAudioProcessor::~JadeSpectrogramAudioProcessor()
@@ -106,8 +107,8 @@ void JadeSpectrogramAudioProcessor::prepareToPlay (double sampleRate, int sample
     m_fs = sampleRate;
     m_spectrogram.preparetoProcess(getTotalNumInputChannels(),samplesPerBlock);
     m_spectrogram.setSamplerate(sampleRate);
-    m_spectrogram.setmemoryTime_s(10.0);
-    m_spectrogram.setFFTSize(2048);
+    m_spectrogram.setmemoryTime_s(2.0);
+    m_spectrogram.setFFTSize(1024);
     m_spectrogram.setfeed_percent(Spectrogram::FeedPercentage::perc50);
 }
 

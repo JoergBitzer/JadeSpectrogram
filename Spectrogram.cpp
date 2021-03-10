@@ -1,14 +1,15 @@
-#include "Spectrogram.h"
+
 
 #include <cmath>
 #include <stdlib.h>    
 #include <time.h>    
 #include "JadeLookAndFeel.h"
+#include "Spectrogram.h"
 
 Spectrogram::Spectrogram()
-:m_fs(48000.0),m_channels(2), m_feed_percent (100.0), m_feed_samples(-1), m_memsize_s(20.0),
+:m_fs(48000.0),m_channels(2), m_feed_percent (100.0), m_feed_samples(-1), m_memsize_s(1.0),
 m_fftsize(1024),m_feedcounter(0),m_inCounter(0),m_feedblocks(1),m_newEntryCounter(0),
-m_memCounter(0),m_isdisplayRunning(true),m_PauseMode(false)
+m_memCounter(0),m_isdisplayRunning(true),m_PauseMode(false),SynchronBlockProcessor()
 {
     m_mode = Spectrogram::ChannelMixMode::AbsMean;
     m_windowChoice = Spectrogram::Windows::Hann;
@@ -338,12 +339,12 @@ m_isPaused(false),m_isRunning(true)
 	m_DisplayMaxColorSlider.onValueChange = [this]() {if (somethingChanged != nullptr) somethingChanged(); };
 
     m_pauseButton.setButtonText("Pause");
-    m_pauseButton.setToggleState(false,false);
+    m_pauseButton.setToggleState(false,NotificationType::dontSendNotification);
     m_pauseButton.onClick = [this](){pauseClicked();};
     addAndMakeVisible(m_pauseButton);
 
     m_runModeButton.setButtonText("Fix");
-    m_runModeButton.setToggleState(false,false);
+    m_runModeButton.setToggleState(false,NotificationType::dontSendNotification);
     m_runModeButton.onClick = [this](){runClicked();};
     addAndMakeVisible(m_runModeButton);
 
@@ -354,7 +355,7 @@ m_isPaused(false),m_isRunning(true)
     m_colorScheme.addItem("Viridis",5);
     m_colorScheme.addItem("Plasma",6);
     m_colorScheme.addItem("Jade",7);
-    m_colorScheme.setSelectedItemIndex(6,false);
+    m_colorScheme.setSelectedItemIndex(6,NotificationType::dontSendNotification);
     m_colorScheme.setColour(juce::ComboBox::ColourIds::backgroundColourId,JadeTeal);
     m_colorScheme.onChange = [this](){m_colorpalette.setColorSceme(m_colorScheme.getSelectedItemIndex());};
     addAndMakeVisible(m_colorScheme);
@@ -366,7 +367,7 @@ m_isPaused(false),m_isRunning(true)
     m_windowFktCombo.addItem("HannPoisson",6);
     m_windowFktCombo.setColour(juce::ComboBox::ColourIds::backgroundColourId,JadeTeal);
     m_windowFktCombo.onChange = [this](){m_spectrogram.setWindow(static_cast<Spectrogram::Windows> (m_windowFktCombo.getSelectedItemIndex()));};
-    m_windowFktCombo.setSelectedItemIndex(1,false);
+    m_windowFktCombo.setSelectedItemIndex(1,NotificationType::dontSendNotification);
     addAndMakeVisible(m_windowFktCombo);
 
 
@@ -593,11 +594,11 @@ void SpectrogramComponent::pauseClicked()
     m_spectrogram.setPauseMode(m_isPaused);
     if (m_isPaused)
     {
-        m_pauseButton.setToggleState(true,false);
+        m_pauseButton.setToggleState(true,NotificationType::dontSendNotification);
     }
     else
     {
-        m_pauseButton.setToggleState(false,false);
+        m_pauseButton.setToggleState(false,NotificationType::dontSendNotification);
     }
 }
 void SpectrogramComponent::runClicked()
@@ -607,12 +608,12 @@ void SpectrogramComponent::runClicked()
     if (m_isRunning)
     {
         m_runModeButton.setButtonText("Fix");
-        m_runModeButton.setToggleState(false,false);
+        m_runModeButton.setToggleState(false,NotificationType::dontSendNotification);
     }
     else
     {
         m_runModeButton.setButtonText("Run");
-        m_runModeButton.setToggleState(true,false);
+        m_runModeButton.setToggleState(true,NotificationType::dontSendNotification);
     }
 }
 
@@ -648,7 +649,7 @@ int SpectrogramParameter::addParameter(std::vector < std::unique_ptr<RangedAudio
 		AudioProcessorParameter::genericParameter,
 		[](float value, int MaxLen) { return (String(0.1*int(exp(value)*10 + 0.5), MaxLen)); },
 		[](const String& text) {return text.getFloatValue(); }));
-
+/*
        	paramVector.push_back(std::make_unique<AudioParameterFloat>(paramDisplayMaxFreq.ID,
 		paramDisplayMaxFreq.name,
 		NormalisableRange<float>(paramDisplayMaxFreq.minValue, paramDisplayMaxFreq.maxValue),
@@ -675,5 +676,5 @@ int SpectrogramParameter::addParameter(std::vector < std::unique_ptr<RangedAudio
 		AudioProcessorParameter::genericParameter,
 		[](float value, int MaxLen) { return (String(1.0*int((value) + 0.5), MaxLen)); },
 		[](const String& text) {return text.getFloatValue(); }));
-
+//*/
 }
