@@ -3,7 +3,6 @@
 CColorPalette::CColorPalette() // MonoChrome
 :m_NrOfColors(2),
 m_ColorScheme(kMono),
-m_Color(0),
 m_InvertScheme(0)
 {
 	m_Min = 0.f;
@@ -14,7 +13,6 @@ m_InvertScheme(0)
 CColorPalette::CColorPalette(int NrOfColors)
 :m_NrOfColors(NrOfColors),
 m_ColorScheme(kMono),
-m_Color(0),
 m_InvertScheme(0)
 {
 	m_Min = 0.f;
@@ -25,7 +23,6 @@ m_InvertScheme(0)
 CColorPalette::CColorPalette(int NrOfColors, int ColorScheme)
 :m_NrOfColors(NrOfColors),
 m_ColorScheme(ColorScheme),
-m_Color(0),
 m_InvertScheme(0)
 {
 	m_Min = 0.f;

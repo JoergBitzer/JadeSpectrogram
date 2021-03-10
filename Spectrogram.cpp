@@ -677,4 +677,5 @@ int SpectrogramParameter::addParameter(std::vector < std::unique_ptr<RangedAudio
 		[](float value, int MaxLen) { return (String(1.0*int((value) + 0.5), MaxLen)); },
 		[](const String& text) {return text.getFloatValue(); }));
 //*/
+    return 0;
 }
