@@ -11,7 +11,8 @@ JadeSpectrogramAudioProcessorEditor::JadeSpectrogramAudioProcessorEditor (JadeSp
     	m_keyboard(m_processorRef.m_keyboardState, MidiKeyboardComponent::Orientation::horizontalKeyboard)
 #else
 JadeSpectrogramAudioProcessorEditor::JadeSpectrogramAudioProcessorEditor (JadeSpectrogramAudioProcessor& p)
-    : AudioProcessorEditor (&p), m_processorRef (p), m_presetGUI(p.m_presets),m_spec(*p.m_parameterVTS, p.m_spectrogram)
+    : AudioProcessorEditor (&p), m_processorRef (p), m_presetGUI(p.m_presets)
+    ,m_spec(*p.m_parameterVTS, p.m_spectrogram)
 #endif
 {
 

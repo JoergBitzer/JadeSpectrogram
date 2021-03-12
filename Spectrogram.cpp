@@ -1,15 +1,19 @@
 
-
+#ifndef _USE_MATH_DEFINES
+	#define _USE_MATH_DEFINES
+#endif
 #include <cmath>
 #include <stdlib.h>    
 #include <time.h>    
 #include "JadeLookAndFeel.h"
 #include "Spectrogram.h"
-
+#ifndef M_PI
+	#define M_PI 3.14159265358979323846
+#endif
 Spectrogram::Spectrogram()
-:SynchronBlockProcessor(), m_fs(48000.0),m_channels(2), m_feed_percent (100.0), m_feed_samples(-1), m_memsize_s(1.0),
+:SynchronBlockProcessor(), m_fs(48000.0),m_channels(2), m_feed_percent (100.0), m_feed_samples(1024), m_memsize_s(1.0),
 m_fftsize(1024),m_feedcounter(0),m_inCounter(0),m_feedblocks(1),m_newEntryCounter(0),
-m_memCounter(0),m_fft(1024), m_isdisplayRunning(true),m_PauseMode(false)
+m_memCounter(0),m_fft(1024), m_PauseMode(false)
 {
     m_mode = Spectrogram::ChannelMixMode::AbsMean;
     m_windowChoice = Spectrogram::Windows::Hann;
@@ -83,12 +87,10 @@ int Spectrogram::processSynchronBlock(std::vector <std::vector<float>>& data, ju
                     }
                     break;
                 case Spectrogram::ChannelMixMode::Left:
-                    m_powerfinal.at(kk) = 1000000.0;
                     m_powerfinal.at(kk) = m_power[0][kk];
                     
                     break;
                 case Spectrogram::ChannelMixMode::Right:
-                    m_powerfinal.at(kk) = 1000000.0;
                     if (m_channels>0)
                         m_powerfinal.at(kk) = m_power[1][kk];
                     
@@ -101,18 +103,10 @@ int Spectrogram::processSynchronBlock(std::vector <std::vector<float>>& data, ju
         if (!m_PauseMode)
         {
             m_newEntryCounter++;
-            if (m_isdisplayRunning)
-            {
-                m_mem.push_back(m_powerfinal);
-                m_mem.pop_front();
-            }
-            else
-            {
-                m_mem[m_memCounter] = m_powerfinal;
-                m_memCounter++;
-                if (m_memCounter == m_memsize_blocks)
-                    m_memCounter = 0;
-            }
+            m_mem.at(m_memCounter) = m_powerfinal;
+            m_memCounter++;
+            if (m_memCounter == m_memsize_blocks)
+                m_memCounter = 0;
         }
         m_protect.exit();
     }
@@ -208,18 +202,14 @@ void Spectrogram::setfeed_percent (FeedPercentage feed)
 void Spectrogram::buildmem()
 {
     m_fft.setFFTSize(m_fftsize);
-    m_feed_samples = int(m_feed_percent*0.01*m_fftsize);
+    m_feed_samples = int(m_feed_percent*0.01*m_fftsize+0.5);
     m_memsize_blocks = int(m_memsize_s*m_fs/m_feed_samples + 0.5);
     m_freqsize = m_fftsize/2+1;
-    m_mem.clear();
+    m_mem.resize(m_memsize_blocks);
     for (auto kk = 0 ; kk< m_memsize_blocks; kk++)
     {
-        std::vector<float> in;
-        in.resize(m_freqsize);
-        std::fill(in.begin(),in.end(),-120.0); // fill with -120 dB = silence
-        m_protect.enter();
-        m_mem.push_back(in);
-        m_protect.exit();
+        m_mem.at(kk).resize(m_freqsize);
+        std::fill(m_mem.at(kk).begin(),m_mem.at(kk).end(),-120.0); // fill with -120 dB = silence
     }
     m_intime.resize(m_fftsize);
     m_powerfinal.resize(m_freqsize);
@@ -280,9 +270,14 @@ void Spectrogram::setWindowFkt()
         }
     }
 }
-int Spectrogram::getMem(std::deque<std::vector<float >>& mem, int& pos)
+
+int Spectrogram::getMem(std::vector<std::vector<float >>& mem, int& pos)
 {
-    mem = m_mem;
+    if (mem.size() != m_mem.size())
+        return -1;
+    
+    for (size_t kk = 0; kk < mem.size(); kk++)
+        std::copy(m_mem.at(kk).begin(),m_mem.at(kk).end(),mem.at(kk).begin());
 
     int newVals = m_newEntryCounter;
     m_newEntryCounter = 0;
@@ -533,16 +528,22 @@ void SpectrogramComponent::timerCallback()
 {
     int wData = m_spectrogram.getMemorySize();
     int hData = m_spectrogram.getSpectrumSize();
-    bool isRunning = m_spectrogram.isRunningMode();
+    
     if (wData != m_internalWidth || hData != m_internalHeight)
     {
         m_internalWidth = wData;
         m_internalHeight = hData;
         m_internalImg = m_internalImg.rescaled(m_internalWidth,m_internalHeight);
+        m_displaymem.resize(wData);
+        for (size_t kk = 0; kk < m_displaymem.size(); ++kk)
+        {
+            m_displaymem.at(kk).resize(hData);
+        }
     }
-    std::deque<std::vector<float >> mem;
+
     int pos;
-    int newVals = m_spectrogram.getMem(mem,pos);
+    int newVals = m_spectrogram.getMem(m_displaymem,pos);
+    
     if (newVals > m_internalWidth)
     {
         m_recomputeAll = true;
@@ -556,19 +557,29 @@ void SpectrogramComponent::timerCallback()
     crit.enter();
     if (m_recomputeAll == true)
     {
+        int newwstart = m_internalWidth-pos;
         for (size_t ww = 0; ww < m_internalWidth; ++ww)
         {
+            int neww = ww+newwstart;
+            if (neww>=m_internalWidth)
+                neww -= m_internalWidth;
             for (size_t hh = 0; hh < m_internalHeight; ++hh)
             {
-                float val = mem[ww][hh];
+                float val = m_displaymem.at(ww).at(hh);
 
                 int color = m_colorpalette.getRGBColor(val);
                 color = color|0xFF000000; // kein alpha blending
-                m_internalImg.setPixelAt(ww,m_internalHeight-1-hh,juce::Colour(color));
-
+                if (m_isRunning)
+                {
+                    m_internalImg.setPixelAt(neww,m_internalHeight-1-hh,juce::Colour(color));
+                }
+                else
+                {
+                    m_internalImg.setPixelAt(ww,m_internalHeight-1-hh,juce::Colour(color));
+                }
             }
         }
-        if (!isRunning)
+        if (!m_isRunning)
         {
             for (size_t hh = 0; hh < m_internalHeight; ++hh)
             {
@@ -604,7 +615,7 @@ void SpectrogramComponent::pauseClicked()
 void SpectrogramComponent::runClicked()
 {
     m_isRunning = !m_isRunning;
-    m_spectrogram.setRunningMode(m_isRunning);
+    
     if (m_isRunning)
     {
         m_runModeButton.setButtonText("Fix");
