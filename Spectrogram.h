@@ -123,7 +123,7 @@ private:
     float m_fs;
     size_t m_channels;
     float m_feed_percent;
-    float m_feed_samples;
+    int m_feed_samples;
     int m_feedblocks;
     float m_memsize_s;
     int m_memsize_blocks;

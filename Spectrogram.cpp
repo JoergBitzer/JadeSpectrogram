@@ -7,7 +7,7 @@
 #include "Spectrogram.h"
 
 Spectrogram::Spectrogram()
-:SynchronBlockProcessor(), m_fs(48000.0),m_channels(2), m_feed_percent (100.0), m_feed_samples(-1), m_memsize_s(1.0),
+:SynchronBlockProcessor(), m_fs(48000.0),m_channels(2), m_feed_percent (100.0), m_feed_samples(1024), m_memsize_s(1.0),
 m_fftsize(1024),m_feedcounter(0),m_inCounter(0),m_feedblocks(1),m_newEntryCounter(0),
 m_memCounter(0),m_fft(1024), m_isdisplayRunning(true),m_PauseMode(false)
 {
@@ -83,12 +83,10 @@ int Spectrogram::processSynchronBlock(std::vector <std::vector<float>>& data, ju
                     }
                     break;
                 case Spectrogram::ChannelMixMode::Left:
-                    m_powerfinal.at(kk) = 1000000.0;
                     m_powerfinal.at(kk) = m_power[0][kk];
                     
                     break;
                 case Spectrogram::ChannelMixMode::Right:
-                    m_powerfinal.at(kk) = 1000000.0;
                     if (m_channels>0)
                         m_powerfinal.at(kk) = m_power[1][kk];
                     
@@ -208,7 +206,7 @@ void Spectrogram::setfeed_percent (FeedPercentage feed)
 void Spectrogram::buildmem()
 {
     m_fft.setFFTSize(m_fftsize);
-    m_feed_samples = int(m_feed_percent*0.01*m_fftsize);
+    m_feed_samples = int(m_feed_percent*0.01*m_fftsize+0.5);
     m_memsize_blocks = int(m_memsize_s*m_fs/m_feed_samples + 0.5);
     m_freqsize = m_fftsize/2+1;
     m_mem.clear();
@@ -560,7 +558,7 @@ void SpectrogramComponent::timerCallback()
         {
             for (size_t hh = 0; hh < m_internalHeight; ++hh)
             {
-                float val = mem[ww][hh];
+                float val = mem.at(ww).at(hh);
 
                 int color = m_colorpalette.getRGBColor(val);
                 color = color|0xFF000000; // kein alpha blending
