@@ -107,7 +107,6 @@ public:
     void setclosestFFTSize_ms(float fftsize_ms);
     void setmemoryTime_s (float memsize_s);
     void setfeed_percent (FeedPercentage feed);
-    void setRunningMode (bool mode){m_isdisplayRunning = mode;};
     void setPauseMode (bool mode){m_PauseMode = mode;};
     void setWindow (Spectrogram::Windows win){m_windowChoice = win;setWindowFkt();};
     
@@ -115,9 +114,9 @@ public:
 
     int getSpectrumSize(){return m_freqsize;};
     int getMemorySize(){return m_memsize_blocks;};
-    int getMem(std::deque<std::vector<float >>& mem, int& pos);
+    int getMem(std::vector<std::vector<float >>& mem, int& pos);
     float getSamplerate(){return m_fs;};
-    bool isRunningMode(){return m_isdisplayRunning;};
+
 private:
     CriticalSection m_protect;
     float m_fs;
@@ -130,7 +129,7 @@ private:
     size_t m_freqsize;
     size_t m_fftsize;
     ChannelMixMode m_mode;
-    std::deque<std::vector<float >> m_mem;
+    std::vector<std::vector<float >> m_mem;
     int m_newEntryCounter;
     int m_memCounter;
 
@@ -152,7 +151,7 @@ private:
     void setWindowFkt();
     SpectrogramParameter m_SpecParameter;
 
-    bool m_isdisplayRunning;
+
     bool m_PauseMode;
 };
 
@@ -170,7 +169,7 @@ public:
 private:
     float m_scaleFactor;
     Spectrogram& m_spectrogram;
-
+    std::vector<std::vector<float >> m_displaymem;
     Image m_internalImg;
     Image m_ColorbarImg;
     int m_internalWidth;
