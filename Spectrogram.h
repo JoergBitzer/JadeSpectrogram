@@ -95,6 +95,7 @@ public:
         perc25,
         perc10
     };
+    
     Spectrogram();
 
     // void prepareToPlay();
@@ -217,7 +218,7 @@ private:
     JadeSpectrogramAudioProcessorEditor& m_editor;
     ComboBox m_fftSizeCombo;
     bool m_hideFFTSizeCombobox;
-
+    void changeFFTSize();
     Label m_FreqLabel;
 
 };

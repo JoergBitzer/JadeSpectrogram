@@ -37,6 +37,7 @@ float g_minValForLogSpectrogram(0.00000000001f);
 int Spectrogram::processSynchronBlock(std::vector <std::vector<float>>& data, juce::MidiBuffer& midiMessages)
 {
     juce::ignoreUnused(midiMessages);
+    m_protect.enter();
     for (size_t kk = 0; kk < m_fftsize ; ++kk) // copy in block to internal mem
     {
         for (size_t cc = 0 ; cc < m_channels ; ++cc)
@@ -102,7 +103,7 @@ int Spectrogram::processSynchronBlock(std::vector <std::vector<float>>& data, ju
             m_powerfinal.at(kk) = 10.0*log10(m_powerfinal.at(kk) + g_minValForLogSpectrogram);
         }
         // save into mem
-        m_protect.enter();
+        
         if (!m_PauseMode)
         {
             m_newEntryCounter++;
@@ -111,7 +112,7 @@ int Spectrogram::processSynchronBlock(std::vector <std::vector<float>>& data, ju
             if (m_memCounter == m_memsize_blocks)
                 m_memCounter = 0;
         }
-        m_protect.exit();
+
     }
     if (m_inCounter == 2*m_fftsize) // copy data to the beginning
     {
@@ -124,7 +125,7 @@ int Spectrogram::processSynchronBlock(std::vector <std::vector<float>>& data, ju
             }
         }
     }
-
+    m_protect.exit();
 
     return 0;
 }
@@ -154,11 +155,12 @@ void Spectrogram::setchannels(size_t newchannels)
 
 void Spectrogram::setFFTSize(size_t newFFTSize)
 {
+    m_protect.enter();
     m_fftsize = newFFTSize;
     setDesiredBlockSizeSamples(m_fftsize);
     buildmem();
     setWindowFkt();
-
+    m_protect.exit();
 }
 size_t Spectrogram::getnextpowerof2(float fftsize_ms)
 {
@@ -226,6 +228,7 @@ void Spectrogram::buildmem()
     }
     m_inCounter = m_fftsize;
     m_newEntryCounter = 0;
+    m_memCounter = 0;
 }
 void Spectrogram::setWindowFkt()
 {
@@ -373,7 +376,10 @@ m_isPaused(false),m_isRunningDisplay(true),m_hideFFTSizeCombobox(false),m_editor
     m_fftSizeCombo.addItem("2048",3);
     m_fftSizeCombo.addItem("4096",4);
     m_fftSizeCombo.addItem("8192",5);
-    m_fftSizeCombo.setSelectedItemIndex(3,NotificationType::dontSendNotification);
+    m_fftSizeCombo.setColour(juce::ComboBox::ColourIds::backgroundColourId,JadeTeal);
+    m_fftSizeCombo.onChange = [this](){changeFFTSize();};
+
+    m_fftSizeCombo.setSelectedItemIndex(2,NotificationType::dontSendNotification);
     addAndMakeVisible(m_fftSizeCombo);
 
     m_FreqLabel.setText("Analysis",juce::NotificationType::dontSendNotification);
@@ -499,13 +505,13 @@ void SpectrogramComponent::paint(Graphics& g)
                 juce::Justification::centred,true);
     }
 
-    if (m_hideFFTSizeCombobox == false)
+/*    if (m_hideFFTSizeCombobox == false)
         m_fftSizeCombo.setVisible(true);
     else
     {
         m_fftSizeCombo.setVisible(false);
     }
-    
+  //*/  
 
 }
 void SpectrogramComponent::resized() 
@@ -649,6 +655,15 @@ void SpectrogramComponent::runClicked()
         m_runModeButton.setButtonText("Run");
         m_runModeButton.setToggleState(true,NotificationType::dontSendNotification);
     }
+}
+void SpectrogramComponent::changeFFTSize()
+{
+    auto FFTSizeIndex = m_fftSizeCombo.getSelectedItemIndex();
+    int fftSize = pow(2.0,9+FFTSizeIndex);
+    
+    //DBG(String(fftSize));
+    m_spectrogram.setFFTSize(fftSize);
+
 }
 
 void SpectrogramComponent::mouseMove (const MouseEvent& event)

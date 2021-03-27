@@ -10,7 +10,7 @@ JadeSpectrogramAudioProcessor::JadeSpectrogramAudioProcessor()
                       #endif
                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
                      #endif
-                       ),isRunning(false),m_fftsize(2*2048)
+                       ),isRunning(false),m_fftsize(2048)
 {
 
     m_specParameter.addParameter(m_paramVector);
