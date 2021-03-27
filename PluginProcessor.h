@@ -46,6 +46,8 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
+    void setFFTSize(int fftsize){m_fftsize = fftsize;};
+    bool getRunningStatus(){return isRunning;};
 private:
     CriticalSection m_protect;
     float m_fs; // sampling rate is always needed
@@ -60,6 +62,9 @@ private:
     // Your plugin stuff
     Spectrogram m_spectrogram;
     SpectrogramParameter m_specParameter;
+
+    int m_fftsize;
+    bool isRunning;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (JadeSpectrogramAudioProcessor)
 };

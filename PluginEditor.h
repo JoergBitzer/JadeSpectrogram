@@ -17,6 +17,9 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override;
 
+    bool getRunningStatus(){return m_processorRef.getRunningStatus();};
+    void setFFTSize(int fftsize){m_processorRef.setFFTSize(fftsize);};
+
 private:
     JadeLookAndFeel m_jadeLAF;
     // This reference is provided as a quick way for your editor to

@@ -1,21 +1,22 @@
 #pragma once
 
 #include <vector>
-#include <deque>
 
 #include "SynchronBlockProcessor.h"
 #include "FFT.h"
 #include "CColorpalette.h"
 #include "PlugInGUISettings.h"
 
+class JadeSpectrogramAudioProcessorEditor;
+
 const struct
 {
 	const std::string ID = "MinFreq";
 	std::string name = "MinFreq";
 	std::string unitName = "Hz";
-	float minValue = log(30.f);
+	float minValue = log(1.f);
 	float maxValue = log(10000.f);
-	float defaultValue = log(30.f);
+	float defaultValue = log(1.f);
 }paramDisplayMinFreq;
 const struct
 {
@@ -158,7 +159,7 @@ private:
 class SpectrogramComponent : public Component, public Timer
 {
 public:
-    SpectrogramComponent(AudioProcessorValueTreeState& vts, Spectrogram& spectrogram);
+    SpectrogramComponent(AudioProcessorValueTreeState& vts, Spectrogram& spectrogram, JadeSpectrogramAudioProcessorEditor& editor);
     ~SpectrogramComponent(){stopTimer();};
 	void paint(Graphics& g) override;
 	void resized() override;
@@ -208,11 +209,15 @@ private:
     void pauseClicked();
     void runClicked();
     bool m_isPaused;
-    bool m_isRunning;
+    bool m_isRunningDisplay;
 
     ComboBox m_colorScheme;
     ComboBox m_windowFktCombo;
     
+    JadeSpectrogramAudioProcessorEditor& m_editor;
+    ComboBox m_fftSizeCombo;
+    bool m_hideFFTSizeCombobox;
+
     Label m_FreqLabel;
 
 };

@@ -7,6 +7,9 @@
 #include <time.h>    
 #include "JadeLookAndFeel.h"
 #include "Spectrogram.h"
+#include "PluginEditor.h"
+
+
 #ifndef M_PI
 	#define M_PI 3.14159265358979323846
 #endif
@@ -285,12 +288,12 @@ int Spectrogram::getMem(std::vector<std::vector<float >>& mem, int& pos)
     return newVals;
 }
 
-SpectrogramComponent::SpectrogramComponent(AudioProcessorValueTreeState& vts, Spectrogram& spectrogram)
+SpectrogramComponent::SpectrogramComponent(AudioProcessorValueTreeState& vts, Spectrogram& spectrogram, JadeSpectrogramAudioProcessorEditor& editor)
 :m_scaleFactor(1.f),m_spectrogram(spectrogram),m_vts(vts),
 m_internalImg(Image::RGB,1,1,true),m_internalWidth(1),
 m_internalHeight(1), m_recomputeAll(true),m_maxColorVal(g_maxColorVal),m_minColorVal(g_minColorVal),
 m_colorpalette(256,6),m_maxDisplayFreq(20000.f),m_minDisplayFreq(0.f),somethingChanged(nullptr),
-m_isPaused(false),m_isRunning(true)
+m_isPaused(false),m_isRunningDisplay(true),m_hideFFTSizeCombobox(false),m_editor(editor)
 {
     startTimer(40) ;
     srand (time(NULL));
@@ -365,8 +368,13 @@ m_isPaused(false),m_isRunning(true)
     m_windowFktCombo.setSelectedItemIndex(1,NotificationType::dontSendNotification);
     addAndMakeVisible(m_windowFktCombo);
 
-
-
+    m_fftSizeCombo.addItem("512",1);
+    m_fftSizeCombo.addItem("1024",2);
+    m_fftSizeCombo.addItem("2048",3);
+    m_fftSizeCombo.addItem("4096",4);
+    m_fftSizeCombo.addItem("8192",5);
+    m_fftSizeCombo.setSelectedItemIndex(3,NotificationType::dontSendNotification);
+    addAndMakeVisible(m_fftSizeCombo);
 
     m_FreqLabel.setText("Analysis",juce::NotificationType::dontSendNotification);
     m_FreqLabel.setJustificationType(juce::Justification::centred);
@@ -491,6 +499,13 @@ void SpectrogramComponent::paint(Graphics& g)
                 juce::Justification::centred,true);
     }
 
+    if (m_hideFFTSizeCombobox == false)
+        m_fftSizeCombo.setVisible(true);
+    else
+    {
+        m_fftSizeCombo.setVisible(false);
+    }
+    
 
 }
 void SpectrogramComponent::resized() 
@@ -522,6 +537,9 @@ void SpectrogramComponent::resized()
 
     x = m_scaleFactor*(g_SliderWidth + g_FreqMeter) + 0.2*w - m_scaleFactor*0.5*100;
     m_windowFktCombo.setBounds(x,m_scaleFactor*g_PauseButton_y,m_scaleFactor*100,m_scaleFactor*g_ButtonHeight);
+
+    x = m_scaleFactor*(g_SliderWidth + g_FreqMeter) + 0.6*w - m_scaleFactor*0.5*100;
+    m_fftSizeCombo.setBounds(x,m_scaleFactor*g_PauseButton_y,m_scaleFactor*100,m_scaleFactor*g_ButtonHeight);
 
 }
 void SpectrogramComponent::timerCallback()
@@ -569,7 +587,7 @@ void SpectrogramComponent::timerCallback()
 
                 int color = m_colorpalette.getRGBColor(val);
                 color = color|0xFF000000; // kein alpha blending
-                if (m_isRunning)
+                if (m_isRunningDisplay)
                 {
                     m_internalImg.setPixelAt(neww,m_internalHeight-1-hh,juce::Colour(color));
                 }
@@ -579,7 +597,7 @@ void SpectrogramComponent::timerCallback()
                 }
             }
         }
-        if (!m_isRunning)
+        if (!m_isRunningDisplay)
         {
             for (size_t hh = 0; hh < m_internalHeight; ++hh)
             {
@@ -597,6 +615,11 @@ void SpectrogramComponent::timerCallback()
     color = color|0xFF000000;
     m_internalImg.setPixelAt(m_internalWidth-1,y,juce::Colour(color));
  //*/   
+
+    m_hideFFTSizeCombobox = m_editor.getRunningStatus();
+
+
+    
     repaint();
 }
 void SpectrogramComponent::pauseClicked()
@@ -614,9 +637,9 @@ void SpectrogramComponent::pauseClicked()
 }
 void SpectrogramComponent::runClicked()
 {
-    m_isRunning = !m_isRunning;
+    m_isRunningDisplay = !m_isRunningDisplay;
     
-    if (m_isRunning)
+    if (m_isRunningDisplay)
     {
         m_runModeButton.setButtonText("Fix");
         m_runModeButton.setToggleState(false,NotificationType::dontSendNotification);

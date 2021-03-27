@@ -12,7 +12,7 @@ JadeSpectrogramAudioProcessorEditor::JadeSpectrogramAudioProcessorEditor (JadeSp
 #else
 JadeSpectrogramAudioProcessorEditor::JadeSpectrogramAudioProcessorEditor (JadeSpectrogramAudioProcessor& p)
     : AudioProcessorEditor (&p), m_processorRef (p), m_presetGUI(p.m_presets)
-    ,m_spec(*p.m_parameterVTS, p.m_spectrogram)
+    ,m_spec(*p.m_parameterVTS, p.m_spectrogram, *this)
 #endif
 {
 
