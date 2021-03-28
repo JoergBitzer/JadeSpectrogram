@@ -147,6 +147,7 @@ private:
     spectrum m_fft;
     Windows m_windowChoice;
     std::vector<float> m_window;
+    
 
     void buildmem();
     void computePowerSpectrum(std::vector<float>& in, std::vector<float>& power);

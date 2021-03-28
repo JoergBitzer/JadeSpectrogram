@@ -20,7 +20,7 @@ JadeSpectrogramAudioProcessorEditor::JadeSpectrogramAudioProcessorEditor (JadeSp
     getConstrainer()->setFixedAspectRatio(1./g_guiratio);
     setSize (g_minGuiSize_x, g_minGuiSize_x*g_guiratio);
 
-	addAndMakeVisible(m_presetGUI);
+	//addAndMakeVisible(m_presetGUI);
 #if WITH_MIDIKEYBOARD      
 	addAndMakeVisible(m_keyboard);
 #endif
@@ -46,7 +46,7 @@ void JadeSpectrogramAudioProcessorEditor::resized()
     // 0.5 is a good compromisecould be slightly higher or lower
     m_jadeLAF.setFontSize(0.5*height*g_minPresetHandlerHeight/g_minGuiSize_y);
     // top presethandler
-    m_presetGUI.setBounds(0, 0, getWidth(), height*g_minPresetHandlerHeight/g_minGuiSize_y);
+    //m_presetGUI.setBounds(0, 0, getWidth(), height*g_minPresetHandlerHeight/g_minGuiSize_y);
     // bottom a small midkeyboard
 #if WITH_MIDIKEYBOARD    
     m_keyboard.setBounds(0, height*(1-g_midikeyboardratio), getWidth(), height*g_midikeyboardratio);

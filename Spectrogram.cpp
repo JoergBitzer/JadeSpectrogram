@@ -97,6 +97,10 @@ int Spectrogram::processSynchronBlock(std::vector <std::vector<float>>& data, ju
                 case Spectrogram::ChannelMixMode::Right:
                     if (m_channels>0)
                         m_powerfinal.at(kk) = m_power[1][kk];
+                    else
+                    {
+                        m_powerfinal.at(kk) = m_power[0][kk];
+                    }
                     
                     break;
             }
@@ -233,7 +237,7 @@ void Spectrogram::buildmem()
 void Spectrogram::setWindowFkt()
 {
     m_window.resize(m_fftsize);
-
+    float normalizeFactor = 0.f;
     for (size_t kk = 0; kk < m_fftsize ; kk++)
     {
         float a0;
@@ -274,7 +278,16 @@ void Spectrogram::setWindowFkt()
                                 *exp(-alpha*fabs(m_fftsize-2*kk)/m_fftsize);
                 break;
         }
+        normalizeFactor += m_window[kk]*m_window[kk];
     }
+    normalizeFactor/= m_fftsize;
+    normalizeFactor = sqrt(normalizeFactor);
+    for (size_t kk = 0; kk < m_fftsize ; kk++)
+    {
+        m_window[kk] /= normalizeFactor;
+        
+    }
+
 }
 
 int Spectrogram::getMem(std::vector<std::vector<float >>& mem, int& pos)
@@ -483,11 +496,11 @@ void SpectrogramComponent::paint(Graphics& g)
 
     // draw scale
     // Add colorbar scale
-    nrOfYTicks = 15;
+    nrOfYTicks = 11;
     RangePerTick = float(g_maxColorVal - g_minColorVal)/(nrOfYTicks-1);
     for (auto kk = 0; kk < nrOfYTicks; ++kk)
     {
-        float newExaktFreq = int((g_minColorVal + RangePerTick*kk)*0.1 + 0.5)*10;
+        float newExaktFreq = int((g_minColorVal + RangePerTick*kk)*0.1 )*10;
         String OutText;
         OutText += String(newExaktFreq);
 
