@@ -2,11 +2,11 @@
 
 const int g_minGuiSize_x(800);
 const int g_maxGuiSize_x(1400);
-const int g_minGuiSize_y(520);
+const int g_minGuiSize_y(550);
 const float g_guiratio = float(g_minGuiSize_y)/g_minGuiSize_x;
 
 const int g_spec_x(5);
-const int g_spec_y(5);
+const int g_spec_y(35);
 
 const int g_spec_width(790);
 const int g_spec_height(510);

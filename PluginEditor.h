@@ -31,6 +31,8 @@ private:
 #endif
     // plugin specific components
     SpectrogramComponent m_spec;
+    Image m_TitleImage;
+    Image m_JadeLogo;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (JadeSpectrogramAudioProcessorEditor)
 };

@@ -26,6 +26,9 @@ JadeSpectrogramAudioProcessorEditor::JadeSpectrogramAudioProcessorEditor (JadeSp
 	addAndMakeVisible(m_keyboard);
 #endif
     addAndMakeVisible(m_spec);
+    m_TitleImage = ImageFileFormat::loadFrom(BinaryData::Title_png, BinaryData::Title_pngSize);
+    //m_JadeLogo = ImageFileFormat::loadFrom(BinaryData::LogoJadeHochschule_jpg, BinaryData::LogoJadeHochschule_jpgSize);
+    m_JadeLogo = ImageFileFormat::loadFrom(BinaryData::LogoJadeHochschuleTrans_png, BinaryData::LogoJadeHochschuleTrans_pngSize);
 }
 
 JadeSpectrogramAudioProcessorEditor::~JadeSpectrogramAudioProcessorEditor()
@@ -37,6 +40,16 @@ void JadeSpectrogramAudioProcessorEditor::paint (juce::Graphics& g)
 {
     // (Our component is opaque, so we must completely fill the background with a solid colour)
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
+    int width = getWidth();
+	float scaleFactor = float(width)/g_minGuiSize_x;
+    g.setColour(getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId).darker(0.2));
+    g.fillRect(scaleFactor*g_spec_x,scaleFactor*(g_spec_y-30),scaleFactor*g_spec_width,scaleFactor*30);
+    g.drawImage(m_TitleImage, scaleFactor*(g_spec_x+60),scaleFactor*(g_spec_y-30),
+    scaleFactor*m_TitleImage.getWidth(),scaleFactor*30,0,0,m_TitleImage.getWidth(),m_TitleImage.getHeight());
+    int LogoSize = 32;
+    float newLogo_x = LogoSize*m_JadeLogo.getWidth()/m_JadeLogo.getHeight();
+    g.drawImage(m_JadeLogo, scaleFactor*(g_spec_x+g_spec_width-newLogo_x),scaleFactor*(g_spec_y-30),
+    scaleFactor*newLogo_x,scaleFactor*LogoSize,0,0,m_JadeLogo.getWidth(),m_JadeLogo.getHeight());
 }
 const int g_minPresetHandlerHeight(30);
 const float g_midikeyboardratio(0.13);
