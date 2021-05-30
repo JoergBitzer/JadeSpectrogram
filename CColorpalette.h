@@ -29,7 +29,22 @@ public:
 	void setInvertStatus(bool status){m_InvertScheme = status;};
 
 	// Access
-	int getRGBColor(float value); 
+	inline int getRGBColor(float value)
+	{
+	if (value >= m_Max)
+		value = m_Max*0.9999f;
+
+	if (value < m_Min)
+		value = m_Min;
+
+	int index = int ((value-m_Min) * m_AccessMult);
+
+	if (index < m_NrOfColors)
+		return m_Color[index];
+	else
+		return m_Color[m_NrOfColors-1];
+
+	}; 
 	float getValue(int iColor);
 
 

@@ -66,45 +66,45 @@ int Spectrogram::processSynchronBlock(std::vector <std::vector<float>>& data, ju
             switch (m_mode)
             {
                 case Spectrogram::ChannelMixMode::AbsMean:
-                    m_powerfinal.at(kk) = 0.0;
+                    m_powerfinal[kk] = 0.0;
                     for (size_t cc = 0 ; cc < m_channels ; ++cc)
                     {
-                        m_powerfinal.at(kk) += m_power[cc][kk];
+                        m_powerfinal[kk] += m_power[cc][kk];
                     }
-                    m_powerfinal.at(kk) /= m_channels;
+                    m_powerfinal[kk] /= m_channels;
                 
                     break;
                 case Spectrogram::ChannelMixMode::Max:
-                    m_powerfinal.at(kk) = 0.0;
+                    m_powerfinal[kk] = 0.0;
                     for (size_t cc = 0 ; cc < m_channels ; ++cc)
                     {
-                        if (m_power[cc][kk] > m_powerfinal.at(kk) )
-                            m_powerfinal.at(kk) = m_power[cc][kk];
+                        if (m_power[cc][kk] > m_powerfinal[kk] )
+                            m_powerfinal[kk] = m_power[cc][kk];
                     }
                     break;
                 case Spectrogram::ChannelMixMode::Min:
-                    m_powerfinal.at(kk) = 1000000.0;
+                    m_powerfinal[kk] = 1000000.0;
                     for (size_t cc = 0 ; cc < m_channels ; ++cc)
                     {
-                        if (m_power[cc][kk] < m_powerfinal.at(kk) )
-                            m_powerfinal.at(kk) = m_power[cc][kk];
+                        if (m_power[cc][kk] < m_powerfinal[kk] )
+                            m_powerfinal[kk] = m_power[cc][kk];
                     }
                     break;
                 case Spectrogram::ChannelMixMode::Left:
-                    m_powerfinal.at(kk) = m_power[0][kk];
+                    m_powerfinal[kk] = m_power[0][kk];
                     
                     break;
                 case Spectrogram::ChannelMixMode::Right:
                     if (m_channels>0)
-                        m_powerfinal.at(kk) = m_power[1][kk];
+                        m_powerfinal[kk] = m_power[1][kk];
                     else
                     {
-                        m_powerfinal.at(kk) = m_power[0][kk];
+                        m_powerfinal[kk] = m_power[0][kk];
                     }
                     
                     break;
             }
-            m_powerfinal.at(kk) = 10.0*log10(m_powerfinal.at(kk) + g_minValForLogSpectrogram);
+            m_powerfinal[kk] = 10.0*log10(m_powerfinal[kk] + g_minValForLogSpectrogram);
         }
         // save into mem
         
@@ -311,7 +311,7 @@ m_internalHeight(1), m_recomputeAll(true),m_maxColorVal(g_maxColorVal),m_minColo
 m_colorpalette(256,6),m_maxDisplayFreq(20000.f),m_minDisplayFreq(0.f),somethingChanged(nullptr),
 m_isPaused(false),m_isRunningDisplay(true),m_hideFFTSizeCombobox(false),m_editor(editor)
 {
-    startTimer(40) ;
+    startTimer(50) ;
     srand (time(NULL));
     m_colorpalette.setValueRange(m_minColorVal,m_maxColorVal);
 
@@ -592,6 +592,13 @@ void SpectrogramComponent::timerCallback()
 
     CriticalSection crit;
     crit.enter();
+    // Idee 
+    // Vorne berechnen welche Teile wirklich neu sind.
+    // m_internalImg.moveImageSection(); nutzen wenn moving gewählt ist
+    // BitmapData(m_internalImg) nutzen, um die Pixeldaten direkt zu setzen
+    // komplette Neuberechnung ist nur notwendig, wenn Farbschema geändert wird, aber das auch nur einmal= 1/40 s
+    // kompliziert ist welche Teile springen bei stehendem Bild (2 Teilbilder vorne hinten)
+
     if (m_recomputeAll == true)
     {
         int newwstart = m_internalWidth-pos;
@@ -606,6 +613,7 @@ void SpectrogramComponent::timerCallback()
 
                 int color = m_colorpalette.getRGBColor(val);
                 color = color|0xFF000000; // kein alpha blending
+
                 if (m_isRunningDisplay)
                 {
                     m_internalImg.setPixelAt(neww,m_internalHeight-1-hh,juce::Colour(color));
@@ -616,7 +624,7 @@ void SpectrogramComponent::timerCallback()
                 }
             }
         }
-        if (!m_isRunningDisplay)
+        if (!m_isRunningDisplay) // redline at end
         {
             for (size_t hh = 0; hh < m_internalHeight; ++hh)
             {

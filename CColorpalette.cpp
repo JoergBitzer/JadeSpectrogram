@@ -66,7 +66,7 @@ void CColorPalette::setColorSceme (int ColorScheme)
 }
 
 	// Datenzugriff
-int CColorPalette::getRGBColor(float value) // Zugriff �ber Wert im Bereich Min Max mit �berwachung und S�ttigung
+/*int CColorPalette::getRGBColor(float value) // Zugriff �ber Wert im Bereich Min Max mit �berwachung und S�ttigung
 {
 	if (value >= m_Max)
 		value = m_Max*0.9999f;
@@ -82,6 +82,7 @@ int CColorPalette::getRGBColor(float value) // Zugriff �ber Wert im Bereich Mi
 		return m_Color[m_NrOfColors-1];
 
 }
+//*/
 float CColorPalette::getValue(int iColor)
 {
 	int kk;
