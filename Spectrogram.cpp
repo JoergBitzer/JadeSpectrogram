@@ -15,7 +15,7 @@
 #endif
 Spectrogram::Spectrogram()
 :SynchronBlockProcessor(), m_fs(48000.0),m_channels(2), m_feed_percent (100.0), m_feed_samples(1024), m_memsize_s(1.0),
-m_fftsize(1024),m_feedcounter(0),m_inCounter(0),m_feedblocks(1),m_newEntryCounter(0),
+m_fftsize(1024),m_feedcounter(0),m_inCounter(0),m_feedblocks(1),m_newEntryCounter(100000000000),
 m_memCounter(0),m_fft(1024), m_PauseMode(false)
 {
     m_mode = Spectrogram::ChannelMixMode::AbsMean;
@@ -165,6 +165,8 @@ void Spectrogram::setFFTSize(size_t newFFTSize)
     buildmem();
     setWindowFkt();
     m_protect.exit();
+    m_newEntryCounter = 100000000000;
+
 }
 size_t Spectrogram::getnextpowerof2(float fftsize_ms)
 {
@@ -231,7 +233,7 @@ void Spectrogram::buildmem()
         std::fill(m_indatamem.at(cc).begin(),m_indatamem.at(cc).end(),0.0);
     }
     m_inCounter = m_fftsize;
-    m_newEntryCounter = 0;
+    m_newEntryCounter = 100000000000;
     m_memCounter = 0;
 }
 void Spectrogram::setWindowFkt()
@@ -295,8 +297,32 @@ int Spectrogram::getMem(std::vector<std::vector<float >>& mem, int& pos)
     if (mem.size() != m_mem.size())
         return -1;
     
-    for (size_t kk = 0; kk < mem.size(); kk++)
-        std::copy(m_mem.at(kk).begin(),m_mem.at(kk).end(),mem.at(kk).begin());
+    if (m_newEntryCounter>=mem.size())
+    {
+        for (size_t kk = 0; kk < mem.size(); kk++)
+            std::copy(m_mem.at(kk).begin(),m_mem.at(kk).end(),mem.at(kk).begin());
+    }
+    else
+    {
+        int startpos = m_memCounter-m_newEntryCounter;
+        if (startpos>=0)
+        {
+            for (size_t kk = startpos; kk < m_memCounter ; kk++)
+                std::copy(m_mem.at(kk).begin(),m_mem.at(kk).end(),mem.at(kk).begin());
+        }
+        else
+        {
+            for (size_t kk = 0; kk < m_memCounter ; kk++)
+                std::copy(m_mem.at(kk).begin(),m_mem.at(kk).end(),mem.at(kk).begin());
+
+            for (size_t kk = mem.size()+startpos; kk < mem.size() ; kk++)
+                std::copy(m_mem.at(kk).begin(),m_mem.at(kk).end(),mem.at(kk).begin());
+        }
+       
+    }
+    
+
+
 
     int newVals = m_newEntryCounter;
     m_newEntryCounter = 0;
@@ -311,7 +337,7 @@ m_internalHeight(1), m_recomputeAll(true),m_maxColorVal(g_maxColorVal),m_minColo
 m_colorpalette(256,6),m_maxDisplayFreq(20000.f),m_minDisplayFreq(0.f),somethingChanged(nullptr),
 m_isPaused(false),m_isRunningDisplay(true),m_hideFFTSizeCombobox(false),m_editor(editor)
 {
-    startTimer(50) ;
+    startTimer(40) ;
     srand (time(NULL));
     m_colorpalette.setValueRange(m_minColorVal,m_maxColorVal);
 
@@ -341,7 +367,7 @@ m_isPaused(false),m_isRunningDisplay(true),m_hideFFTSizeCombobox(false),m_editor
 	m_DisplayMinColorSlider.setSliderStyle(Slider::SliderStyle::LinearVertical);
 	m_DisplayMinColorAttachment = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(m_vts, paramDisplayMinColor.ID, m_DisplayMinColorSlider);
 	addAndMakeVisible(m_DisplayMinColorSlider);
-	m_DisplayMinColorSlider.onValueChange = [this]() {if (somethingChanged != nullptr) somethingChanged(); };
+	m_DisplayMinColorSlider.onValueChange = [this]() {m_recomputeAll = true; if (somethingChanged != nullptr) somethingChanged(); };
 
 	m_DisplayMaxColorLabel.setText("Color.", NotificationType::dontSendNotification);
 	m_DisplayMaxColorLabel.setJustificationType(Justification::centred);
@@ -350,7 +376,7 @@ m_isPaused(false),m_isRunningDisplay(true),m_hideFFTSizeCombobox(false),m_editor
 	m_DisplayMaxColorSlider.setSliderStyle(Slider::SliderStyle::LinearVertical);
 	m_DisplayMaxColorAttachment = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(m_vts, paramDisplayMaxColor.ID, m_DisplayMaxColorSlider);
 	addAndMakeVisible(m_DisplayMaxColorSlider);
-	m_DisplayMaxColorSlider.onValueChange = [this]() {if (somethingChanged != nullptr) somethingChanged(); };
+	m_DisplayMaxColorSlider.onValueChange = [this]() { m_recomputeAll = true; if (somethingChanged != nullptr) somethingChanged(); };
 
     m_pauseButton.setButtonText("Pause");
     m_pauseButton.setToggleState(false,NotificationType::dontSendNotification);
@@ -371,7 +397,7 @@ m_isPaused(false),m_isRunningDisplay(true),m_hideFFTSizeCombobox(false),m_editor
     m_colorScheme.addItem("Jade",7);
     m_colorScheme.setSelectedItemIndex(6,NotificationType::dontSendNotification);
     m_colorScheme.setColour(juce::ComboBox::ColourIds::backgroundColourId,JadeTeal);
-    m_colorScheme.onChange = [this](){m_colorpalette.setColorSceme(m_colorScheme.getSelectedItemIndex());};
+    m_colorScheme.onChange = [this](){m_recomputeAll = true; m_colorpalette.setColorSceme(m_colorScheme.getSelectedItemIndex());};
     addAndMakeVisible(m_colorScheme);
     m_windowFktCombo.addItem("Rectangular",1);
     m_windowFktCombo.addItem("Hann",2);
@@ -592,15 +618,13 @@ void SpectrogramComponent::timerCallback()
 
     CriticalSection crit;
     crit.enter();
-    // Idee 
-    // Vorne berechnen welche Teile wirklich neu sind.
-    // m_internalImg.moveImageSection(); nutzen wenn moving gewählt ist
     // BitmapData(m_internalImg) nutzen, um die Pixeldaten direkt zu setzen
-    // komplette Neuberechnung ist nur notwendig, wenn Farbschema geändert wird, aber das auch nur einmal= 1/40 s
-    // kompliziert ist welche Teile springen bei stehendem Bild (2 Teilbilder vorne hinten)
+    const Image::BitmapData destData (m_internalImg, 0, 0, m_internalWidth, m_internalHeight, Image::BitmapData::writeOnly);
+    // destData.setPixelColour (0, 0, colour);
 
     if (m_recomputeAll == true)
     {
+        m_recomputeAll = false;
         int newwstart = m_internalWidth-pos;
         for (size_t ww = 0; ww < m_internalWidth; ++ww)
         {
@@ -616,11 +640,13 @@ void SpectrogramComponent::timerCallback()
 
                 if (m_isRunningDisplay)
                 {
-                    m_internalImg.setPixelAt(neww,m_internalHeight-1-hh,juce::Colour(color));
+                    //m_internalImg.setPixelAt(neww,m_internalHeight-1-hh,juce::Colour(color));
+                    destData.setPixelColour (neww,m_internalHeight-1-hh,juce::Colour(color));
                 }
                 else
                 {
-                    m_internalImg.setPixelAt(ww,m_internalHeight-1-hh,juce::Colour(color));
+                    // m_internalImg.setPixelAt(ww,m_internalHeight-1-hh,juce::Colour(color));
+                    destData.setPixelColour(ww,m_internalHeight-1-hh,juce::Colour(color));
                 }
             }
         }
@@ -628,24 +654,84 @@ void SpectrogramComponent::timerCallback()
         {
             for (size_t hh = 0; hh < m_internalHeight; ++hh)
             {
-                m_internalImg.setPixelAt(pos,m_internalHeight-1-hh,juce::Colours::red);
+                // m_internalImg.setPixelAt(pos,m_internalHeight-1-hh,juce::Colours::red);
+                destData.setPixelColour(pos,m_internalHeight-1-hh,juce::Colours::red);
             }
         }
     }
+    else
+    {
+        // int newwstart = m_internalWidth-pos;
+        int startread = pos - newVals;
+        // copy image 
+        if (m_isRunningDisplay)
+        {
+            m_internalImg.moveImageSection(0,0,newVals,0,m_internalWidth-newVals,m_internalHeight);
+            for (size_t ww = m_internalWidth-newVals ; ww < m_internalWidth; ++ww)
+            {
+                int readpos;
+                if (startread < 0)
+                    readpos = wData+(startread);
+                else
+                    readpos = startread;
+                for (size_t hh = 0; hh < m_internalHeight; ++hh)
+                {
+                    float val = m_displaymem.at(readpos).at(hh);
+
+                    int color = m_colorpalette.getRGBColor(val);
+                    color = color|0xFF000000; // kein alpha blending
+                    //m_internalImg.setPixelAt(ww,m_internalHeight-1-hh,juce::Colour(color));
+                    destData.setPixelColour(ww,m_internalHeight-1-hh,juce::Colour(color));
+                }
+                startread++;
+            }
+        }
+        else
+        {
+            for (size_t ww = 0 ; ww < newVals; ++ww)
+            {
+                int readpos;
+                if (startread < 0)
+                    readpos = wData+(startread);
+                else
+                    readpos = startread;
+                for (size_t hh = 0; hh < m_internalHeight; ++hh)
+                {
+                    float val = m_displaymem.at(readpos).at(hh);
+
+                    int color = m_colorpalette.getRGBColor(val);
+                    color = color|0xFF000000; // kein alpha blending
+                    // m_internalImg.setPixelAt(readpos,m_internalHeight-1-hh,juce::Colour(color));
+                    destData.setPixelColour(readpos,m_internalHeight-1-hh,juce::Colour(color));
+                }
+                startread++;
+            }
+            int drawwidth = 1;
+            if (m_internalHeight < 2048)
+                drawwidth++;
+
+            if (m_internalHeight < 1024)
+                drawwidth +=2 ;
+            for (size_t hh = 0; hh < m_internalHeight; ++hh)
+            {
+
+                for (int dd = 0 ; dd < drawwidth ;++dd)
+                {
+                    int drawpos = pos+dd;
+                    if (drawpos == m_internalWidth)
+                        drawpos -= m_internalWidth;
+                    destData.setPixelColour(drawpos,m_internalHeight-1-hh,juce::Colours::red);
+
+                }
+            }
+
+        }
+        
+    }
+    
     crit.exit();
 
-/*
-    m_internalImg.moveImageSection(0,0,1,0,m_internalWidth-1,m_internalHeight);
-    //int x = m_internalWidth* float(rand())/RAND_MAX;
-    int y = m_internalHeight* float(rand())/RAND_MAX;
-    unsigned int color = pow(2,24) * float(rand())/RAND_MAX;
-    color = color|0xFF000000;
-    m_internalImg.setPixelAt(m_internalWidth-1,y,juce::Colour(color));
- //*/   
-
     m_hideFFTSizeCombobox = m_editor.getRunningStatus();
-
-
     
     repaint();
 }
@@ -683,8 +769,9 @@ void SpectrogramComponent::changeFFTSize()
     int fftSize = pow(2.0,9+FFTSizeIndex);
     
     //DBG(String(fftSize));
+    stopTimer();
     m_spectrogram.setFFTSize(fftSize);
-
+    startTimer(40);
 }
 
 void SpectrogramComponent::mouseMove (const MouseEvent& event)
