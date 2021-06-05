@@ -618,9 +618,7 @@ void SpectrogramComponent::timerCallback()
 
     CriticalSection crit;
     crit.enter();
-    // BitmapData(m_internalImg) nutzen, um die Pixeldaten direkt zu setzen
     const Image::BitmapData destData (m_internalImg, 0, 0, m_internalWidth, m_internalHeight, Image::BitmapData::writeOnly);
-    // destData.setPixelColour (0, 0, colour);
 
     if (m_recomputeAll == true)
     {
@@ -645,7 +643,6 @@ void SpectrogramComponent::timerCallback()
                 }
                 else
                 {
-                    // m_internalImg.setPixelAt(ww,m_internalHeight-1-hh,juce::Colour(color));
                     destData.setPixelColour(ww,m_internalHeight-1-hh,juce::Colour(color));
                 }
             }
@@ -654,7 +651,6 @@ void SpectrogramComponent::timerCallback()
         {
             for (size_t hh = 0; hh < m_internalHeight; ++hh)
             {
-                // m_internalImg.setPixelAt(pos,m_internalHeight-1-hh,juce::Colours::red);
                 destData.setPixelColour(pos,m_internalHeight-1-hh,juce::Colours::red);
             }
         }
@@ -680,7 +676,6 @@ void SpectrogramComponent::timerCallback()
 
                     int color = m_colorpalette.getRGBColor(val);
                     color = color|0xFF000000; // kein alpha blending
-                    //m_internalImg.setPixelAt(ww,m_internalHeight-1-hh,juce::Colour(color));
                     destData.setPixelColour(ww,m_internalHeight-1-hh,juce::Colour(color));
                 }
                 startread++;
@@ -701,7 +696,6 @@ void SpectrogramComponent::timerCallback()
 
                     int color = m_colorpalette.getRGBColor(val);
                     color = color|0xFF000000; // kein alpha blending
-                    // m_internalImg.setPixelAt(readpos,m_internalHeight-1-hh,juce::Colour(color));
                     destData.setPixelColour(readpos,m_internalHeight-1-hh,juce::Colour(color));
                 }
                 startread++;

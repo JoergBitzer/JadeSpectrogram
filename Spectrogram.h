@@ -1,3 +1,13 @@
+/**
+ * @file Spectrogram.h
+ * @author J. Bitzer @ TGM@ Jade Hochschule
+ * @brief This classes implements a spectrogram and a view to the data in the JUCE framework
+ * @version 0.1
+ * @date 2021-06-05
+ * 
+ * @copyright Copyright (c) 2021
+ * 
+ */
 #pragma once
 
 #include <vector>
