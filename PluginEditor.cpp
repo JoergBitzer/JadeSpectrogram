@@ -12,7 +12,7 @@ JadeSpectrogramAudioProcessorEditor::JadeSpectrogramAudioProcessorEditor (JadeSp
 #else
 JadeSpectrogramAudioProcessorEditor::JadeSpectrogramAudioProcessorEditor (JadeSpectrogramAudioProcessor& p)
     : AudioProcessorEditor (&p), m_processorRef (p), m_presetGUI(p.m_presets)
-    ,m_spec(*p.m_parameterVTS, p.m_spectrogram, *this)
+    ,m_spec(*p.m_parameterVTS, p.m_spectrogram, *this), m_aboutboxvisible(false)
 #endif
 {
 
@@ -38,6 +38,15 @@ JadeSpectrogramAudioProcessorEditor::~JadeSpectrogramAudioProcessorEditor()
 //==============================================================================
 void JadeSpectrogramAudioProcessorEditor::paint (juce::Graphics& g)
 {
+    if (m_aboutboxvisible == true)
+    {
+        m_spec.setVisible(false);
+    }
+    else
+    {
+        m_spec.setVisible(true);
+
+    }
     // (Our component is opaque, so we must completely fill the background with a solid colour)
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
     int width = getWidth();
@@ -50,6 +59,8 @@ void JadeSpectrogramAudioProcessorEditor::paint (juce::Graphics& g)
     float newLogo_x = LogoSize*m_JadeLogo.getWidth()/m_JadeLogo.getHeight();
     g.drawImage(m_JadeLogo, scaleFactor*(g_spec_x+g_spec_width-newLogo_x),scaleFactor*(g_spec_y-30),
     scaleFactor*newLogo_x,scaleFactor*LogoSize,0,0,m_JadeLogo.getWidth(),m_JadeLogo.getHeight());
+    
+
 }
 const int g_minPresetHandlerHeight(30);
 const float g_midikeyboardratio(0.13);
@@ -74,4 +85,29 @@ void JadeSpectrogramAudioProcessorEditor::resized()
     // use setBounds with scaleFactor
     m_spec.setScaleFactor(scaleFactor);
     m_spec.setBounds(scaleFactor*g_spec_x,scaleFactor*g_spec_y,scaleFactor*g_spec_width,scaleFactor*g_spec_height);
+}
+void JadeSpectrogramAudioProcessorEditor::mouseDown (const MouseEvent& event)
+{
+    int x = event.getMouseDownX();
+    int y = event.getMouseDownY();
+
+    int w = getWidth();
+    int h = getHeight();
+    float scaleFactor = float(w)/g_minGuiSize_x;
+    int LogoSize = 32;
+    float newLogo_x = LogoSize*m_JadeLogo.getWidth()/m_JadeLogo.getHeight();
+
+    if (m_aboutboxvisible == false)
+    {
+        // Is the Logo cicked
+        if (x>scaleFactor*(g_spec_x+g_spec_width-newLogo_x) & y > scaleFactor*(g_spec_y-30) &
+        x < scaleFactor*(g_spec_x+g_spec_width) & y < scaleFactor*(g_spec_y))
+        {
+            m_aboutboxvisible = true; 
+        }
+    }else
+    {
+        m_aboutboxvisible = false; 
+    }
+    repaint();
 }

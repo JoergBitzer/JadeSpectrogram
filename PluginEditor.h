@@ -19,7 +19,7 @@ public:
 
     bool getRunningStatus(){return m_processorRef.getRunningStatus();};
     void setFFTSize(int fftsize){m_processorRef.setFFTSize(fftsize);};
-
+    void mouseDown (const MouseEvent& event);
 private:
     JadeLookAndFeel m_jadeLAF;
     // This reference is provided as a quick way for your editor to
@@ -33,6 +33,6 @@ private:
     SpectrogramComponent m_spec;
     Image m_TitleImage;
     Image m_JadeLogo;
-
+    bool m_aboutboxvisible;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (JadeSpectrogramAudioProcessorEditor)
 };

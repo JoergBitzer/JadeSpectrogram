@@ -232,4 +232,5 @@ private:
     void changeFFTSize();
     Label m_FreqLabel;
 
+    
 };
