@@ -88,7 +88,8 @@ juce_add_binary_data(AudioPluginJadeSpectrogram-binary
                     SOURCES 
                         images/LogoJadeHochschule.jpg 
                         images/Title.png
-                        images/LogoJadeHochschuleTrans.png)
+                        images/LogoJadeHochschuleTrans.png
+                        images/AboutBox.png)
 
 # `target_link_libraries` links libraries and JUCE modules to other libraries or executables. Here,
 # we're linking our executable target to the `juce::juce_audio_utils` module. Inter-module

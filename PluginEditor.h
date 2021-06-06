@@ -33,6 +33,7 @@ private:
     SpectrogramComponent m_spec;
     Image m_TitleImage;
     Image m_JadeLogo;
+    Image m_AboutBox;
     bool m_aboutboxvisible;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (JadeSpectrogramAudioProcessorEditor)
 };

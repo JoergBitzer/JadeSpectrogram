@@ -29,6 +29,7 @@ JadeSpectrogramAudioProcessorEditor::JadeSpectrogramAudioProcessorEditor (JadeSp
     m_TitleImage = ImageFileFormat::loadFrom(BinaryData::Title_png, BinaryData::Title_pngSize);
     //m_JadeLogo = ImageFileFormat::loadFrom(BinaryData::LogoJadeHochschule_jpg, BinaryData::LogoJadeHochschule_jpgSize);
     m_JadeLogo = ImageFileFormat::loadFrom(BinaryData::LogoJadeHochschuleTrans_png, BinaryData::LogoJadeHochschuleTrans_pngSize);
+    m_AboutBox = ImageFileFormat::loadFrom(BinaryData::AboutBox_png, BinaryData::AboutBox_pngSize);
 }
 
 JadeSpectrogramAudioProcessorEditor::~JadeSpectrogramAudioProcessorEditor()
@@ -38,18 +39,24 @@ JadeSpectrogramAudioProcessorEditor::~JadeSpectrogramAudioProcessorEditor()
 //==============================================================================
 void JadeSpectrogramAudioProcessorEditor::paint (juce::Graphics& g)
 {
+    int width = getWidth();
+    int height = getHeight();
+    
     if (m_aboutboxvisible == true)
     {
         m_spec.setVisible(false);
+        g.fillAll (Colours::white);
+        g.drawImage(m_AboutBox, width/2-m_AboutBox.getWidth()/2,height/2-m_AboutBox.getHeight()/2,
+        m_AboutBox.getWidth(), m_AboutBox.getHeight(), 0, 0, m_AboutBox.getWidth(),m_AboutBox.getHeight());
+
     }
     else
     {
+        g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
         m_spec.setVisible(true);
 
     }
     // (Our component is opaque, so we must completely fill the background with a solid colour)
-    g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
-    int width = getWidth();
 	float scaleFactor = float(width)/g_minGuiSize_x;
     g.setColour(getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId).darker(0.2));
     g.fillRect(scaleFactor*g_spec_x,scaleFactor*(g_spec_y-30),scaleFactor*g_spec_width,scaleFactor*30);
