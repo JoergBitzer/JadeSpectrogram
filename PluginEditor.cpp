@@ -45,7 +45,7 @@ void JadeSpectrogramAudioProcessorEditor::paint (juce::Graphics& g)
     if (m_aboutboxvisible == true)
     {
         m_spec.setVisible(false);
-        g.fillAll (Colours::white);
+        g.fillAll (Colour::fromFloatRGBA(0.352941176470588, 0.372549019607843, 0.337254901960784, 0.5));
         g.drawImage(m_AboutBox, width/2-m_AboutBox.getWidth()/2,height/2-m_AboutBox.getHeight()/2,
         m_AboutBox.getWidth(), m_AboutBox.getHeight(), 0, 0, m_AboutBox.getWidth(),m_AboutBox.getHeight());
 
