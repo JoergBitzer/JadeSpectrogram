@@ -633,7 +633,7 @@ void SpectrogramComponent::timerCallback()
             {
                 float val = m_displaymem.at(ww).at(hh);
 
-                int color = m_colorpalette.getRGBColor(val);
+                unsigned int color = m_colorpalette.getRGBColor(val);
                 color = color|0xFF000000; // kein alpha blending
 
                 if (m_isRunningDisplay)
@@ -674,7 +674,7 @@ void SpectrogramComponent::timerCallback()
                 {
                     float val = m_displaymem.at(readpos).at(hh);
 
-                    int color = m_colorpalette.getRGBColor(val);
+                    unsigned int color = m_colorpalette.getRGBColor(val);
                     color = color|0xFF000000; // kein alpha blending
                     destData.setPixelColour(ww,m_internalHeight-1-hh,juce::Colour(color));
                 }
@@ -694,7 +694,7 @@ void SpectrogramComponent::timerCallback()
                 {
                     float val = m_displaymem.at(readpos).at(hh);
 
-                    int color = m_colorpalette.getRGBColor(val);
+                    unsigned int color = m_colorpalette.getRGBColor(val);
                     color = color|0xFF000000; // kein alpha blending
                     destData.setPixelColour(readpos,m_internalHeight-1-hh,juce::Colour(color));
                 }

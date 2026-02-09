@@ -29,7 +29,7 @@ public:
 	void setInvertStatus(bool status){m_InvertScheme = status;};
 
 	// Access
-	inline int getRGBColor(float value)
+	inline unsigned int getRGBColor(float value)
 	{
 	if (value >= m_Max)
 		value = m_Max*0.9999f;
@@ -51,7 +51,7 @@ public:
 protected:
 	void ComputeColors(void);
 	void AllocateColors(void);
-	std::vector<int> m_Color;
+	std::vector<unsigned int> m_Color;
 	int m_NrOfColors;
 	float m_Max;
 	float m_Min;

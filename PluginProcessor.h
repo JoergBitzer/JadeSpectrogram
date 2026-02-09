@@ -63,8 +63,8 @@ private:
     Spectrogram m_spectrogram;
     SpectrogramParameter m_specParameter;
 
-    int m_fftsize;
-    bool isRunning;
+    int m_fftsize = 1024;
+    bool isRunning = false;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (JadeSpectrogramAudioProcessor)
 };
